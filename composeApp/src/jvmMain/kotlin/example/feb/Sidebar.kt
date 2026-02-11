@@ -29,14 +29,13 @@ fun Sidebar(
     chapters: List<Chapter>,
     modifier: Modifier = Modifier,
     selectedChapterID: UUID?,
-    editingChapterID: UUID?,
+    editingState: EditingState,
     onAddChapter: () -> Unit,
     onSelectChapter: (UUID) -> Unit,
     onEditChapter: (UUID) -> Unit,
     onRenameCommit: () -> Unit,
     onDeleteChapter: (UUID) -> Unit,
     onEditDraftChange: (String) -> Unit,
-    editingDraftTitle: String?,
 ) {
 
     Column(
@@ -105,16 +104,24 @@ fun Sidebar(
             ) {
                     chapter ->
 
+
+                val isEditing =
+                    editingState is EditingState.Editing &&
+                            editingState.id == chapter.id
+
+                val draft =
+                    (editingState as? EditingState.Editing)?.draft
+
                 ChapterItem(
 
                     title = chapter.title,
                     isSelected = chapter.id == selectedChapterID,
-                    isEditing = chapter.id == editingChapterID,
+                    isEditing = isEditing,
 
                     onSelect = { onSelectChapter(chapter.id) },
                     onEdit = { onEditChapter(chapter.id) },
 
-                    draftTitle = if (chapter.id == editingChapterID) editingDraftTitle else null,
+                    draftTitle = if (isEditing) draft else null,
                     onDraftChange = onEditDraftChange,
 
                     onRenameCommit = onRenameCommit,

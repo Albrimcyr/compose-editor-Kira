@@ -11,13 +11,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.Alignment
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
+
+//  - - - - -
+//  model
+//  - - - - -
 
 
 data class Chapter(
@@ -25,21 +24,43 @@ data class Chapter(
     val title: String
 )
 
-// basic view model (in case I want to expand)
+
+//  - - - - -
+//  editing state
+//  - - - - -
+
+
+sealed class EditingState {
+    object None : EditingState()
+    data class Editing(val id: UUID, val draft: String) : EditingState()
+}
+
+
+
+//  - - - - -
+//  basic ViewModel
+//  UI State + logic
+//  - - - - -
+
 class AppViewModel {
 
+    // state
     var chapters by mutableStateOf(listOf<Chapter>())
         private set
 
     var selectedChapterID by mutableStateOf<UUID?>(null)
         private set
 
-    var editingChapterID by mutableStateOf<UUID?>(null)
+//    var editingChapterID by mutableStateOf<UUID?>(null)
+//        private set
+//
+//    var editingDraftTitle by mutableStateOf<String?>(null)
+//        private set
+
+    var editingState by mutableStateOf<EditingState>(EditingState.None)
         private set
 
-    var editingDraftTitle by mutableStateOf<String?>(null)
-        private set
-
+    // actions
     fun addChapter(){
         chapters = chapters + Chapter(
             id = UUID.randomUUID(),
@@ -49,30 +70,34 @@ class AppViewModel {
 
     fun selectChapter(id: UUID) {
         selectedChapterID = id
-        editingChapterID = null
-        editingDraftTitle = null
+        editingState = EditingState.None
     }
 
     fun startEditing(id: UUID) {
-        val chapter = chapters.first { it.id == id }
-        editingChapterID = id
-        editingDraftTitle = chapter.title
+        val chapter = chapters.firstOrNull { it.id == id } ?: return
+        editingState = EditingState.Editing(id, chapter.title)
     }
 
     fun changeDraft(text: String) {
-        editingDraftTitle = text
+        val current = editingState
+        if (current is EditingState.Editing) {
+            editingState = current.copy(draft = text)
+        }
     }
 
     fun commitRename() {
-        val id = editingChapterID ?: return
-        val newTitle = editingDraftTitle ?: return
+        val current = editingState
 
-        chapters = chapters.map { chapter ->
-            if (chapter.id == id) chapter.copy(title = newTitle) else chapter
+        if (current is EditingState.Editing) {
+
+            chapters = chapters.map { chapter ->
+                if (chapter.id == current.id) chapter.copy(title = current.draft) else chapter
+            }
+
         }
 
-        editingChapterID = null
-        editingDraftTitle = null
+
+        editingState = EditingState.None
     }
 
     fun deleteChapter(id: UUID) {
@@ -82,9 +107,9 @@ class AppViewModel {
             selectedChapterID = null
         }
 
-        if (editingChapterID == id) {
-            editingChapterID = null
-            editingDraftTitle = null
+        val current = editingState
+        if (current is EditingState.Editing && current.id == id) {
+            editingState = EditingState.None
         }
     }
 
@@ -93,7 +118,7 @@ class AppViewModel {
 
 }
 
-// UI
+// UI layer
 @Composable
 fun App() {
     MaterialTheme {
@@ -101,8 +126,6 @@ fun App() {
         val viewModel = remember {AppViewModel()}
         val chapters = viewModel.chapters
         val selectedChapterID = viewModel.selectedChapterID
-        val editingChapterID = viewModel.editingChapterID
-        val editingDraftTitle = viewModel.editingDraftTitle
         val selectedChapter = viewModel.selectedChapter()
 
 
@@ -112,8 +135,7 @@ fun App() {
                 modifier = Modifier.weight(0.2f),
                 chapters = chapters,
                 selectedChapterID = selectedChapterID,
-                editingChapterID = editingChapterID,
-                editingDraftTitle = editingDraftTitle,
+                editingState = viewModel.editingState,
 
                 onAddChapter = viewModel::addChapter,
                 onSelectChapter = viewModel::selectChapter,
@@ -126,7 +148,8 @@ fun App() {
 
             Box(
                 modifier = Modifier
-                    .fillMaxHeight().weight(0.8f),
+                    .fillMaxHeight()
+                    .weight(0.8f),
 
                 contentAlignment = Alignment.Center
             ) {
