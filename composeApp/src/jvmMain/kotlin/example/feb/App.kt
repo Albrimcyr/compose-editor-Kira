@@ -51,12 +51,6 @@ class AppViewModel {
     var selectedChapterID by mutableStateOf<UUID?>(null)
         private set
 
-//    var editingChapterID by mutableStateOf<UUID?>(null)
-//        private set
-//
-//    var editingDraftTitle by mutableStateOf<String?>(null)
-//        private set
-
     var editingState by mutableStateOf<EditingState>(EditingState.None)
         private set
 
@@ -124,17 +118,13 @@ fun App() {
     MaterialTheme {
 
         val viewModel = remember {AppViewModel()}
-        val chapters = viewModel.chapters
-        val selectedChapterID = viewModel.selectedChapterID
-        val selectedChapter = viewModel.selectedChapter()
-
 
         Row(modifier = Modifier.fillMaxSize()) {
 
             Sidebar(
                 modifier = Modifier.weight(0.2f),
-                chapters = chapters,
-                selectedChapterID = selectedChapterID,
+                chapters = viewModel.chapters,
+                selectedChapterID = viewModel.selectedChapterID,
                 editingState = viewModel.editingState,
 
                 onAddChapter = viewModel::addChapter,
@@ -153,7 +143,7 @@ fun App() {
 
                 contentAlignment = Alignment.Center
             ) {
-                MainContent(selectedChapter = selectedChapter)
+                MainContent(selectedChapter = viewModel.selectedChapter())
             }
 
 
