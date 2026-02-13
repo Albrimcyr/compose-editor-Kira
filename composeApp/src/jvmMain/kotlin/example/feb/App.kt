@@ -56,13 +56,16 @@ class AppViewModel {
 
     // actions
     fun addChapter(){
-        chapters = chapters + Chapter(
+        val newChapter = Chapter(
             id = UUID.randomUUID(),
             title = "New chapter",
         )
+        chapters = chapters + newChapter
+        selectedChapterID = newChapter.id
     }
 
     fun selectChapter(id: UUID) {
+        if (chapters.none { it.id == id }) {return}
         selectedChapterID = id
         editingState = EditingState.None
     }
