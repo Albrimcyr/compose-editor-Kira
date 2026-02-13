@@ -4,6 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -36,6 +40,8 @@ fun ChapterItem(
     onEdit: () -> Unit,
     onRenameCommit: () -> Unit
 ) {
+
+    var menuExpanded by remember { mutableStateOf(false) }
 
     // row
     // [ text / text-field - button in the box  - button in the box ]
@@ -83,27 +89,25 @@ fun ChapterItem(
         }
 
         if (isSelected && !isEditing) {
-
-            Row {
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .aspectRatio(1f)
-                        .clickable { onEdit() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("EDIT")
+            Box(
+                modifier = Modifier,
+            ){
+                IconButton(
+                    onClick = {menuExpanded = true},
+                ){
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        "more"
+                    )
                 }
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .aspectRatio(1f)
-                        .clickable { onDelete() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("DEL")
-                }
+                ChapterActionsMenu(
+                    expanded = menuExpanded,
+                    onDismiss = { menuExpanded = false },
+                    onEdit = onEdit,
+                    onDelete = onDelete,
+                )
+
             }
         }
 
