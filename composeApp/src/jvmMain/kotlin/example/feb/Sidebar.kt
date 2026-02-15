@@ -96,7 +96,8 @@ fun Sidebar(
         Divider()
 
         LazyColumn (
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(8.dp),
         ) {
             items(
                 items = chapters,
@@ -128,6 +129,7 @@ fun Sidebar(
 
                     onDelete = { onDeleteChapter(chapter.id) }
                 )
+
 
                 Divider()
 

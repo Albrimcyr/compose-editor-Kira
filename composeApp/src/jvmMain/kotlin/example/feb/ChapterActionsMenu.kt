@@ -41,7 +41,7 @@ fun ChapterActionsMenu(
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(16.dp),
 
     ){
         DropdownMenuItem(
@@ -52,10 +52,7 @@ fun ChapterActionsMenu(
                 onDismiss()
             }
         )
-
-        Spacer(Modifier.height(4.dp))
         HorizontalDivider()
-        Spacer(Modifier.height(4.dp))
 
         DropdownMenuItem(
             text = { Text(text = "Delete", color = Red) },

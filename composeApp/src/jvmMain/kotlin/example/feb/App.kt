@@ -13,6 +13,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
+
+import androidx.compose.ui.input.key.*
 
 //  - - - - -
 //  model
@@ -62,6 +68,7 @@ class AppViewModel {
         )
         chapters = chapters + newChapter
         selectedChapterID = newChapter.id
+        editingState = EditingState.None
     }
 
     fun selectChapter(id: UUID) {
@@ -113,6 +120,10 @@ class AppViewModel {
     fun selectedChapter(): Chapter? =
         chapters.firstOrNull { it.id == selectedChapterID }
 
+    fun cleanSelection() {
+        editingState = EditingState.None
+    }
+
 }
 
 // UI layer
@@ -122,7 +133,27 @@ fun App() {
 
         val viewModel = remember {AppViewModel()}
 
-        Row(modifier = Modifier.fillMaxSize()) {
+        Row(modifier = Modifier
+            .fillMaxSize()
+            .onKeyEvent { event ->
+                if (event.type == KeyEventType.KeyDown) {
+                    when {
+
+                        event.key == Key.Escape -> {
+                            viewModel.cleanSelection()
+                            true
+                        }
+
+                        event.key == Key.Delete && viewModel.selectedChapterID != null -> {
+                            viewModel.selectedChapterID?.let { viewModel.deleteChapter(it) }
+                            true
+                        }
+
+                        else -> false
+                    }
+                } else false
+            }
+        ) {
 
             Sidebar(
                 modifier = Modifier.weight(0.2f),
