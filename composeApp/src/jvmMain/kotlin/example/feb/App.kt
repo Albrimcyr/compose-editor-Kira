@@ -1,5 +1,9 @@
 package example.feb
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import java.util.UUID
 
 import androidx.compose.runtime.Composable
@@ -14,12 +18,17 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 
 import androidx.compose.ui.input.key.*
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.unit.dp
+import java.awt.Cursor
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 
 //  - - - - -
 //  model
@@ -144,64 +153,100 @@ fun App() {
 
         val viewModel = remember {AppViewModel()}
 
-        Row(modifier = Modifier
-            .fillMaxSize()
-            .onKeyEvent { event ->
-                if (event.type == KeyEventType.KeyDown) {
-                    when {
+        var split by remember { mutableStateOf(0.20f) }
+        val minSplit = 0.10f
+        val maxSplit = 0.50f
 
-                        event.key == Key.Escape -> {
-                            viewModel.cleanSelection()
-                            true
+        BoxWithConstraints(){
+
+            val totalWidthPx = constraints.maxWidth.toFloat().coerceAtLeast(1f)
+
+            Row(modifier = Modifier
+                .fillMaxSize()
+                .onKeyEvent { event ->
+                    if (event.type == KeyEventType.KeyDown) {
+                        when {
+
+                            event.key == Key.Escape -> {
+                                viewModel.cleanSelection()
+                                true
+                            }
+
+                            event.key == Key.Delete && viewModel.selectedChapterID != null -> {
+                                viewModel.selectedChapterID?.let { viewModel.deleteChapter(it) }
+                                true
+                            }
+
+                            else -> false
                         }
-
-                        event.key == Key.Delete && viewModel.selectedChapterID != null -> {
-                            viewModel.selectedChapterID?.let { viewModel.deleteChapter(it) }
-                            true
-                        }
-
-                        else -> false
-                    }
-                } else false
-            }
-        ) {
-
-            Sidebar(
-                modifier = Modifier.weight(0.2f),
-                chapters = viewModel.chapters,
-                selectedChapterID = viewModel.selectedChapterID,
-                editingState = viewModel.editingState,
-
-                onAddChapter = viewModel::addChapter,
-                onSelectChapter = viewModel::selectChapter,
-                onEditChapter = viewModel::startEditing,
-                onEditDraftChange = viewModel::changeDraft,
-                onRenameCommit = viewModel::commitRename,
-                onDeleteChapter = viewModel::deleteChapter
-            )
-
-
-            VerticalDivider()
-
-
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .weight(0.8f),
-
-                contentAlignment = Alignment.Center
+                    } else false
+                }
             ) {
 
-                val selected = viewModel.selectedChapter()
+                // // // // //  //
+                // LEFT PART    //
+                // // // // //  //
 
-                MainContent(
-                    selectedChapter = selected,
-                    onContentChange = { newText ->
-                        selected?.id?.let { viewModel.changeChapterContent(it, newText) }
-                    }
+                Sidebar(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(this@BoxWithConstraints.maxWidth * split),
+                    chapters = viewModel.chapters,
+                    selectedChapterID = viewModel.selectedChapterID,
+                    editingState = viewModel.editingState,
+
+                    onAddChapter = viewModel::addChapter,
+                    onSelectChapter = viewModel::selectChapter,
+                    onEditChapter = viewModel::startEditing,
+                    onEditDraftChange = viewModel::changeDraft,
+                    onRenameCommit = viewModel::commitRename,
+                    onDeleteChapter = viewModel::deleteChapter
                 )
-            }
 
+
+                // // // // //  //
+                // DIVIDER      //
+                // // // // //  //
+
+
+                val dragState = rememberDraggableState { delta ->
+                    val deltaFraction = delta / totalWidthPx
+                    split = (split + deltaFraction).coerceIn(minSplit, maxSplit)
+                }
+
+                val divColor = Color(0x61666666)
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(1.dp)
+                        .draggable(
+                            orientation = Orientation.Horizontal,
+                            state = dragState,
+                        )
+                        .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR)))
+                        .background(divColor)
+                )
+
+
+                // // // // //  //
+                // RIGHT PART   //
+                // // // // //  //
+
+                Box(
+                    modifier = Modifier.fillMaxHeight().weight(1f)
+                ) {
+
+                    val selected = viewModel.selectedChapter()
+
+                    MainContent(
+                        selectedChapter = selected,
+                        onContentChange = { newText ->
+                            selected?.id?.let { viewModel.changeChapterContent(it, newText) }
+                        }
+                    )
+                }
+            }
 
         }
     }
