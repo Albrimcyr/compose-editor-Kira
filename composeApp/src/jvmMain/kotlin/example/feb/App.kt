@@ -12,6 +12,7 @@ import androidx.compose.runtime.setValue
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -27,7 +28,8 @@ import androidx.compose.ui.input.key.*
 
 data class Chapter(
     val id: UUID,
-    val title: String
+    val title: String,
+    val content: String
 )
 
 
@@ -65,6 +67,7 @@ class AppViewModel {
         val newChapter = Chapter(
             id = UUID.randomUUID(),
             title = "New chapter",
+            content = ""
         )
         chapters = chapters + newChapter
         selectedChapterID = newChapter.id
@@ -124,6 +127,14 @@ class AppViewModel {
         editingState = EditingState.None
     }
 
+    fun changeChapterContent(id: UUID, text: String) {
+        if (chapters.none { it.id == id }) return
+
+        chapters = chapters.map {chapter ->
+            if (chapter.id == id) chapter.copy(content = text) else chapter
+        }
+    }
+
 }
 
 // UI layer
@@ -170,6 +181,9 @@ fun App() {
             )
 
 
+            VerticalDivider()
+
+
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
@@ -177,7 +191,15 @@ fun App() {
 
                 contentAlignment = Alignment.Center
             ) {
-                MainContent(selectedChapter = viewModel.selectedChapter())
+
+                val selected = viewModel.selectedChapter()
+
+                MainContent(
+                    selectedChapter = selected,
+                    onContentChange = { newText ->
+                        selected?.id?.let { viewModel.changeChapterContent(it, newText) }
+                    }
+                )
             }
 
 

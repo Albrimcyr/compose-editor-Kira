@@ -130,8 +130,9 @@ fun Sidebar(
                     onDelete = { onDeleteChapter(chapter.id) }
                 )
 
-
+                Spacer(Modifier.height(4.dp))
                 Divider()
+                Spacer(Modifier.height(4.dp))
 
             }
 
