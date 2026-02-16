@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import example.feb.ui.AppShapes
 
 @Composable
 fun Sidebar(
@@ -71,6 +72,7 @@ fun Sidebar(
                         overflow = TextOverflow.Ellipsis
                     )
                 },
+                shape = AppShapes.rounded12,
                 icon = {
                     Icon(
                         imageVector = Icons.Filled.Add,

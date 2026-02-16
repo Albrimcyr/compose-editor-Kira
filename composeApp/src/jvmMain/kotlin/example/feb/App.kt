@@ -132,9 +132,6 @@ class AppViewModel {
     fun selectedChapter(): Chapter? =
         chapters.firstOrNull { it.id == selectedChapterID }
 
-    fun cleanSelection() {
-        editingState = EditingState.None
-    }
 
     fun changeChapterContent(id: UUID, text: String) {
         if (chapters.none { it.id == id }) return
@@ -142,6 +139,25 @@ class AppViewModel {
         chapters = chapters.map {chapter ->
             if (chapter.id == id) chapter.copy(content = text) else chapter
         }
+    }
+
+
+    fun changeSelectedChapterContent(text: String) {
+        val id = selectedChapterID ?: return
+        chapters = chapters.map { chapter ->
+            if (chapter.id == id) chapter.copy(content = text) else chapter
+        }
+    }
+
+
+    // desktop keys
+    fun onEsc() {
+        editingState = EditingState.None
+    }
+
+    fun onDel() {
+        val id = selectedChapterID ?: return
+        deleteChapter(id)
     }
 
 }
@@ -165,17 +181,10 @@ fun App() {
                 .fillMaxSize()
                 .onKeyEvent { event ->
                     if (event.type == KeyEventType.KeyDown) {
-                        when {
+                        when (event.key) {
 
-                            event.key == Key.Escape -> {
-                                viewModel.cleanSelection()
-                                true
-                            }
-
-                            event.key == Key.Delete && viewModel.selectedChapterID != null -> {
-                                viewModel.selectedChapterID?.let { viewModel.deleteChapter(it) }
-                                true
-                            }
+                            Key.Escape -> {viewModel.onEsc(); true}
+                            Key.Delete -> {viewModel.onDel(); true}
 
                             else -> false
                         }
@@ -241,9 +250,8 @@ fun App() {
 
                     MainContent(
                         selectedChapter = selected,
-                        onContentChange = { newText ->
-                            selected?.id?.let { viewModel.changeChapterContent(it, newText) }
-                        }
+                        onContentChange = viewModel::changeSelectedChapterContent
+
                     )
                 }
             }

@@ -21,10 +21,11 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.MenuDefaults.itemColors
+import androidx.compose.material3.MenuDefaults.shape
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Red
 import androidx.compose.ui.unit.dp
-
+import example.feb.ui.AppShapes
 
 
 @Composable
@@ -41,7 +42,7 @@ fun ChapterActionsMenu(
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(16.dp),
+        shape = AppShapes.rounded12,
 
     ){
         DropdownMenuItem(

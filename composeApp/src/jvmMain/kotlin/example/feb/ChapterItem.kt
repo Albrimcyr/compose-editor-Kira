@@ -32,6 +32,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import example.feb.ui.AppShapes
 
 
 @Composable
@@ -51,18 +52,17 @@ fun ChapterItem(
 
     var menuExpanded by remember { mutableStateOf(false) }
     val selectedColor = Color(0xFF9BDBD4)
-    val roundedShape = RoundedCornerShape(12.dp)
 
     // Surface -> Row
     // [ text / text-field - button in the box  - button in the box ]
 
     Surface(
-        shape = roundedShape,
+        shape = AppShapes.rounded12,
         color = if (isSelected) selectedColor else MaterialTheme.colorScheme.secondaryContainer,
         tonalElevation = if (isSelected) 3.dp else 0.dp,
         modifier = Modifier
             .fillMaxWidth()
-            .clip(roundedShape)
+            .clip(AppShapes.rounded12)
             .clickable(enabled = !isEditing) { onSelect() },
     ) {
 
@@ -85,9 +85,10 @@ fun ChapterItem(
                     value = draftTitle ?: "",
                     onValueChange = onDraftChange,
                     singleLine = true,
+                    shape = AppShapes.rounded12,
                     modifier = Modifier
                         .weight(1f)
-                        .padding(12.dp)
+//                        .padding(2.dp)
                         .onPreviewKeyEvent() {
                             if (it.key == Key.Enter) {
                                 onRenameCommit()
@@ -111,7 +112,7 @@ fun ChapterItem(
                     modifier = Modifier,
                 ){
                     IconButton(
-                        shape = roundedShape,
+                        shape = AppShapes.rounded12,
                         onClick = {menuExpanded = true},
                     ){
                         Icon(
