@@ -32,6 +32,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import example.feb.ui.AppColors
 import example.feb.ui.AppShapes
 
 
@@ -51,14 +52,17 @@ fun ChapterItem(
 ) {
 
     var menuExpanded by remember { mutableStateOf(false) }
-    val selectedColor = Color(0xFF9BDBD4)
+    val selectedColor = AppColors.selectionColor
+    val sidebarColor = AppColors.sidebarColor
+    val whiteTextColor = AppColors.whiteTextColor
+    val grayedTextColor = AppColors.grayedTextColor
 
     // Surface -> Row
     // [ text / text-field - button in the box  - button in the box ]
 
     Surface(
         shape = AppShapes.rounded12,
-        color = if (isSelected) selectedColor else MaterialTheme.colorScheme.secondaryContainer,
+        color = if (isSelected) selectedColor else sidebarColor,
         tonalElevation = if (isSelected) 3.dp else 0.dp,
         modifier = Modifier
             .fillMaxWidth()
@@ -74,7 +78,7 @@ fun ChapterItem(
                     if (isSelected)
                         selectedColor
                     else
-                        MaterialTheme.colorScheme.secondaryContainer
+                        sidebarColor
                 ),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -100,6 +104,7 @@ fun ChapterItem(
                 Text(
                     text = title,
                     maxLines = 1,
+                    color = if (isSelected) whiteTextColor else grayedTextColor,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
                         .weight(1f)

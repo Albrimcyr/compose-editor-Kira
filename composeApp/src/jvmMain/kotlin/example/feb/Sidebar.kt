@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import example.feb.ui.AppColors
 import example.feb.ui.AppShapes
 
 @Composable
@@ -43,7 +44,7 @@ fun Sidebar(
         modifier = Modifier
             .then(modifier)
             .fillMaxHeight()
-            .background(MaterialTheme.colorScheme.primaryContainer),
+            .background(AppColors.sidebarColor),
 
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -62,12 +63,13 @@ fun Sidebar(
                     .padding(12.dp),
                 fontWeight = FontWeight.Bold,
                 fontSize = 24.sp,
+                color = AppColors.whiteTextColor,
                 text = "Chapters")
 
             ExtendedFloatingActionButton(
                 text = {
                     Text(
-                        text = "Add Chapter",
+                        text = "Add",
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -80,8 +82,7 @@ fun Sidebar(
                     )
                 },
                 onClick = onAddChapter,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
+                containerColor = AppColors.selectionColor,
                 elevation = FloatingActionButtonDefaults.elevation(
                     defaultElevation = 0.dp,
                     pressedElevation = 0.dp,
