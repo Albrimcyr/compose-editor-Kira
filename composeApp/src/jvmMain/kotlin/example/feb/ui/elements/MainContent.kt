@@ -1,14 +1,10 @@
-package example.feb
+package example.feb.ui.elements
 
 import androidx.compose.runtime.Composable
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.*
 import androidx.compose.foundation.text.*
-import androidx.compose.material3.Divider
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.TextField
 import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,14 +17,16 @@ import example.feb.ui.AppColors
 
 @Composable
 fun MainContent(
-    selectedChapter: Chapter?,
+    hasSelection: Boolean,
+    title: String,
+    content: String,
     onContentChange: (String) -> Unit
 ) {
     Box(
         modifier = Modifier.fillMaxSize().padding(4.dp),
         contentAlignment = Alignment.Center
     ) {
-        if (selectedChapter == null) {
+        if (!hasSelection) {
             Text(
                 text = "Select a chapter",
             )
@@ -42,7 +40,7 @@ fun MainContent(
                         .padding(20.dp),
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp,
-                    text = selectedChapter.title,)
+                    text = title,)
 
                 HorizontalDivider(modifier = Modifier
                     .padding(horizontal = 12.dp, vertical = 4.dp),
@@ -50,7 +48,7 @@ fun MainContent(
                 )
 
                 BasicTextField(
-                    value = selectedChapter.content,
+                    value = content,
                     onValueChange = onContentChange,
                     modifier = Modifier.fillMaxWidth().padding(16.dp).fillMaxHeight(),
 

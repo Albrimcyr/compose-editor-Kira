@@ -4,171 +4,46 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
-import java.util.UUID
+
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.unit.dp
+import example.feb.presentation.AppViewModel
+import java.awt.Cursor
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 
-import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.VerticalDivider
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.input.key.type
 
-import androidx.compose.ui.input.key.*
-import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.unit.dp
-import java.awt.Cursor
-import androidx.compose.ui.input.pointer.pointerHoverIcon
 import example.feb.ui.AppColors
+import example.feb.ui.elements.MainContent
+import example.feb.ui.elements.Sidebar
 
-//  - - - - -
-//  model
-//  - - - - -
-
-
-data class Chapter(
-    val id: UUID,
-    val title: String,
-    val content: String
-)
-
-
-//  - - - - -
-//  editing state
-//  - - - - -
-
-
-sealed class EditingState {
-    object None : EditingState()
-    data class Editing(val id: UUID, val draft: String) : EditingState()
-}
-
-
-
-//  - - - - -
-//  basic ViewModel
-//  UI State + logic
-//  - - - - -
-
-class AppViewModel {
-
-    // state
-    var chapters by mutableStateOf(listOf<Chapter>())
-        private set
-
-    var selectedChapterID by mutableStateOf<UUID?>(null)
-        private set
-
-    var editingState by mutableStateOf<EditingState>(EditingState.None)
-        private set
-
-    // actions
-    fun addChapter(){
-        val newChapter = Chapter(
-            id = UUID.randomUUID(),
-            title = "New chapter",
-            content = ""
-        )
-        chapters = chapters + newChapter
-        selectedChapterID = newChapter.id
-        editingState = EditingState.None
-    }
-
-    fun selectChapter(id: UUID) {
-        if (chapters.none { it.id == id }) {return}
-        selectedChapterID = id
-        editingState = EditingState.None
-    }
-
-    fun startEditing(id: UUID) {
-        val chapter = chapters.firstOrNull { it.id == id } ?: return
-        editingState = EditingState.Editing(id, chapter.title)
-    }
-
-    fun changeDraft(text: String) {
-        val current = editingState
-        if (current is EditingState.Editing) {
-            editingState = current.copy(draft = text)
-        }
-    }
-
-    fun commitRename() {
-        val current = editingState
-
-        if (current is EditingState.Editing) {
-
-            chapters = chapters.map { chapter ->
-                if (chapter.id == current.id) chapter.copy(title = current.draft) else chapter
-            }
-
-        }
-
-
-        editingState = EditingState.None
-    }
-
-    fun deleteChapter(id: UUID) {
-        chapters = chapters.filter { it.id != id }
-
-        if (selectedChapterID == id) {
-            selectedChapterID = null
-        }
-
-        val current = editingState
-        if (current is EditingState.Editing && current.id == id) {
-            editingState = EditingState.None
-        }
-    }
-
-    fun selectedChapter(): Chapter? =
-        chapters.firstOrNull { it.id == selectedChapterID }
-
-
-    fun changeChapterContent(id: UUID, text: String) {
-        if (chapters.none { it.id == id }) return
-
-        chapters = chapters.map {chapter ->
-            if (chapter.id == id) chapter.copy(content = text) else chapter
-        }
-    }
-
-
-    fun changeSelectedChapterContent(text: String) {
-        val id = selectedChapterID ?: return
-        chapters = chapters.map { chapter ->
-            if (chapter.id == id) chapter.copy(content = text) else chapter
-        }
-    }
-
-
-    // desktop keys
-    fun onEsc() {
-        editingState = EditingState.None
-    }
-
-    fun onDel() {
-        val id = selectedChapterID ?: return
-        deleteChapter(id)
-    }
-
-}
 
 // UI layer
 @Composable
-fun App() {
+fun App(viewModel: AppViewModel) {
     MaterialTheme {
+        val uiState by viewModel.uiState.collectAsState()
 
-        val viewModel = remember {AppViewModel()}
+        val focusRequester = remember { FocusRequester() }
+        LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
         var split by remember { mutableStateOf(0.40f) }
         val minSplit = 0.10f
@@ -180,6 +55,8 @@ fun App() {
 
             Row(modifier = Modifier
                 .fillMaxSize()
+                .focusRequester(focusRequester)
+                .focusable()
                 .onKeyEvent { event ->
                     if (event.type == KeyEventType.KeyDown) {
                         when (event.key) {
@@ -201,16 +78,16 @@ fun App() {
                     modifier = Modifier
                         .fillMaxHeight()
                         .width(this@BoxWithConstraints.maxWidth * split),
-                    chapters = viewModel.chapters,
-                    selectedChapterID = viewModel.selectedChapterID,
-                    editingState = viewModel.editingState,
+                    chapters = uiState.chapters,
+                    selectedChapterID = uiState.selectedId,
+                    editingState = uiState.editingState,
 
-                    onAddChapter = viewModel::addChapter,
-                    onSelectChapter = viewModel::selectChapter,
-                    onEditChapter = viewModel::startEditing,
-                    onEditDraftChange = viewModel::changeDraft,
-                    onRenameCommit = viewModel::commitRename,
-                    onDeleteChapter = viewModel::deleteChapter
+                    onAddChapter = viewModel::onAddChapter,
+                    onSelectChapter = viewModel::onSelectChapter,
+                    onEditChapter = viewModel::onStartRenaming,
+                    onEditDraftChange = viewModel::onRenameDraftChange,
+                    onRenameCommit = viewModel::onRenameCommit,
+                    onDeleteChapter = viewModel::onDeleteChapter
                 )
 
 
@@ -245,11 +122,11 @@ fun App() {
                     modifier = Modifier.fillMaxHeight().weight(1f)
                 ) {
 
-                    val selected = viewModel.selectedChapter()
-
                     MainContent(
-                        selectedChapter = selected,
-                        onContentChange = viewModel::changeSelectedChapterContent
+                        hasSelection = uiState.hasSelection,
+                        title = uiState.selectedTitle,
+                        content = uiState.selectedContent,
+                        onContentChange = viewModel::onContentChange
 
                     )
                 }

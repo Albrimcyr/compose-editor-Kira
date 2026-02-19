@@ -1,4 +1,4 @@
-package example.feb
+package example.feb.ui.elements
 
 import java.util.UUID;
 
@@ -8,11 +8,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.foundation.background
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.Icons
@@ -20,17 +17,18 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import example.feb.presentation.ChapterRowUi
+import example.feb.presentation.EditingState
 import example.feb.ui.AppColors
 import example.feb.ui.AppShapes
 
 @Composable
 fun Sidebar(
-    chapters: List<Chapter>,
+    chapters: List<ChapterRowUi>,
     modifier: Modifier = Modifier,
     selectedChapterID: UUID?,
     editingState: EditingState,
@@ -114,16 +112,14 @@ fun Sidebar(
             items(
                 items = chapters,
                 key = {it.id}
-            ) {
-                    chapter ->
-
+            ) { chapter ->
 
                 val isEditing =
-                    editingState is EditingState.Editing &&
+                    editingState is EditingState.Renaming &&
                             editingState.id == chapter.id
 
                 val draft =
-                    (editingState as? EditingState.Editing)?.draft
+                    (editingState as? EditingState.Renaming)?.draft
 
                 ChapterItem(
 

@@ -1,9 +1,5 @@
-package example.feb
+package example.feb.ui.elements
 
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 
 import androidx.compose.material3.DropdownMenu
@@ -12,19 +8,11 @@ import androidx.compose.material3.DropdownMenuItem
 
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme
-
-import androidx.compose.ui.Modifier
 
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MenuDefaults
-import androidx.compose.material3.MenuDefaults.itemColors
-import androidx.compose.material3.MenuDefaults.shape
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Red
-import androidx.compose.ui.unit.dp
 import example.feb.ui.AppShapes
 
 
