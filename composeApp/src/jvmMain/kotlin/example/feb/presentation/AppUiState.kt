@@ -25,5 +25,7 @@ data class AppUiState(
 
     val editingState: EditingState = EditingState.None,
 
+    val isDarkTheme: Boolean = true,
+
     val errorMessage: String? = null
 )

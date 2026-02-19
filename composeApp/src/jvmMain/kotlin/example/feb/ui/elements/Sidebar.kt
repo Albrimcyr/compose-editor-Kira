@@ -38,13 +38,14 @@ fun Sidebar(
     onRenameCommit: () -> Unit,
     onDeleteChapter: (UUID) -> Unit,
     onEditDraftChange: (String) -> Unit,
+    colors: AppColors
 ) {
 
     Column(
         modifier = Modifier
             .then(modifier)
             .fillMaxHeight()
-            .background(AppColors.sidebarColor)
+            .background(colors.sidebarColor)
             .padding(4.dp),
 
         horizontalAlignment = Alignment.CenterHorizontally
@@ -64,14 +65,14 @@ fun Sidebar(
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 fontWeight = FontWeight.Bold,
                 fontSize = 24.sp,
-                color = AppColors.whiteTextColor,
+                color = colors.activeTextColor,
                 text = "Chapters")
 
             ExtendedFloatingActionButton(
                 text = {
                     Text(
                         text = "Add",
-                        color = AppColors.whiteTextColor,
+                        color = colors.activeTextColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -81,11 +82,11 @@ fun Sidebar(
                     Icon(
                         imageVector = Icons.Filled.Add,
                         contentDescription = "Add",
-                        tint = AppColors.whiteTextColor
+                        tint = colors.activeTextColor
                     )
                 },
                 onClick = onAddChapter,
-                containerColor = AppColors.selectionColor,
+                containerColor = colors.selectionColor,
                 elevation = FloatingActionButtonDefaults.elevation(
                     defaultElevation = 0.dp,
                     pressedElevation = 0.dp,
@@ -101,7 +102,7 @@ fun Sidebar(
 
         HorizontalDivider(modifier = Modifier
             .padding(horizontal = 12.dp, vertical = 4.dp),
-            color = AppColors.selectionColor,
+            color = colors.selectionColor,
         )
 
 
@@ -135,7 +136,9 @@ fun Sidebar(
 
                     onRenameCommit = onRenameCommit,
 
-                    onDelete = { onDeleteChapter(chapter.id) }
+                    onDelete = { onDeleteChapter(chapter.id) },
+
+                    colors = colors,
                 )
 
             }

@@ -32,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.input.key.onKeyEvent
 
 import example.feb.ui.AppColors
+import example.feb.ui.colorsFor
 import example.feb.ui.elements.MainContent
 import example.feb.ui.elements.Sidebar
 
@@ -41,6 +42,7 @@ import example.feb.ui.elements.Sidebar
 fun App(viewModel: AppViewModel) {
     MaterialTheme {
         val uiState by viewModel.uiState.collectAsState()
+        val colors = colorsFor(uiState.isDarkTheme)
 
         val focusRequester = remember { FocusRequester() }
         LaunchedEffect(Unit) { focusRequester.requestFocus() }
@@ -79,6 +81,7 @@ fun App(viewModel: AppViewModel) {
                         .fillMaxHeight()
                         .width(this@BoxWithConstraints.maxWidth * split),
                     chapters = uiState.chapters,
+                    colors = colors,
                     selectedChapterID = uiState.selectedId,
                     editingState = uiState.editingState,
 
@@ -110,7 +113,7 @@ fun App(viewModel: AppViewModel) {
                             state = dragState,
                         )
                         .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR)))
-                        .background(AppColors.sidebarColor)
+                        .background(colors.sidebarColor)
                 )
 
 
@@ -126,8 +129,11 @@ fun App(viewModel: AppViewModel) {
                         hasSelection = uiState.hasSelection,
                         title = uiState.selectedTitle,
                         content = uiState.selectedContent,
-                        onContentChange = viewModel::onContentChange
+                        onContentChange = viewModel::onContentChange,
 
+                        colors = colors,
+                        isDarkTheme = uiState.isDarkTheme,
+                        onToggleTheme = viewModel::onToggleTheme
                     )
                 }
             }

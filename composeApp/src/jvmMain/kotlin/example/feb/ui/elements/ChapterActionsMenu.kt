@@ -24,9 +24,6 @@ fun ChapterActionsMenu(
     onDismiss: () -> Unit,
     ){
 
-//    val DeleteHoverBg = Color(0x1AFF0000)
-//    val DeletePressedBg = Color(0x33FF0000) Change back later?
-
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismiss,

@@ -40,21 +40,19 @@ fun ChapterItem(
     onSelect: () -> Unit,
     onDelete: () -> Unit,
     onEdit: () -> Unit,
-    onRenameCommit: () -> Unit
+    onRenameCommit: () -> Unit,
+
+    colors: AppColors
 ) {
 
     var menuExpanded by remember { mutableStateOf(false) }
-    val selectedColor = AppColors.selectionColor
-    val sidebarColor = AppColors.sidebarColor
-    val whiteTextColor = AppColors.whiteTextColor
-    val grayedTextColor = AppColors.grayedTextColor
 
     // Surface -> Row
     // [ text / text-field - button in the box  - button in the box ]
 
     Surface(
         shape = AppShapes.rounded12,
-        color = if (isSelected) selectedColor else sidebarColor,
+        color = if (isSelected) colors.selectionColor else colors.sidebarColor,
         tonalElevation = if (isSelected) 3.dp else 0.dp,
         modifier = Modifier
             .fillMaxWidth()
@@ -68,9 +66,9 @@ fun ChapterItem(
                 .height(IntrinsicSize.Min)
                 .background(
                     if (isSelected)
-                        selectedColor
+                        colors.selectionColor
                     else
-                        sidebarColor
+                        colors.sidebarColor
                 ),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -82,8 +80,8 @@ fun ChapterItem(
                     onValueChange = onDraftChange,
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = AppColors.whiteTextColor,
-                        unfocusedTextColor = AppColors.grayedTextColor
+                        focusedTextColor = colors.activeTextColor,
+                        unfocusedTextColor = colors.grayedTextColor
                     ),
                     shape = AppShapes.rounded12,
                     modifier = Modifier
@@ -100,7 +98,7 @@ fun ChapterItem(
                 Text(
                     text = title,
                     maxLines = 1,
-                    color = if (isSelected) whiteTextColor else grayedTextColor,
+                    color = if (isSelected) colors.activeTextColor else colors.grayedTextColor,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
                         .weight(1f)
@@ -119,7 +117,7 @@ fun ChapterItem(
                         Icon(
                             imageVector = Icons.Default.MoreVert,
                             "more",
-                            tint = whiteTextColor,
+                            tint = colors.activeTextColor,
                         )
                     }
 

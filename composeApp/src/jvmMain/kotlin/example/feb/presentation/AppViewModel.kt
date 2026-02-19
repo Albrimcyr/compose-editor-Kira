@@ -179,7 +179,7 @@ class AppViewModel(
         val id = _uiState.value.selectedId ?: return
         val ch = chaptersById[id] ?: return
 
-        // ui update !
+        // logic and ui update
         chaptersById[id] = ch.copy(content = text)
         _uiState.update { it.copy(selectedContent = text) }
 
@@ -199,6 +199,10 @@ class AppViewModel(
     fun onDel() {
         val id = _uiState.value.selectedId ?: return
         onDeleteChapter(id)
+    }
+
+    fun onToggleTheme() {
+        _uiState.update { it.copy(isDarkTheme = !it.isDarkTheme) }
     }
 
     // Helpers :)
