@@ -16,10 +16,12 @@ import androidx.compose.ui.unit.sp
 import example.feb.ui.AppColors
 
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material3.Surface
+import example.feb.presentation.AppUiState
+import example.feb.ui.AppShapes
 
 
 @Composable
@@ -43,31 +45,35 @@ fun MainContent(
         } else {
             Column(modifier = Modifier.fillMaxSize()) {
 
-                Row(){
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
 
                     Text(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier
+                            .weight(1f)
                             .padding(20.dp),
                         fontWeight = FontWeight.Bold,
                         fontSize = 24.sp,
                         text = title,
-                        color = colors.activeTextColor,)
+                        color = colors.dividerColor)
 
-                    IconButton(onClick = onToggleTheme){
-                        Icon(
-                            imageVector = if (isDarkTheme) Icons.Outlined.LightMode else Icons.Filled.DarkMode,
-                            contentDescription = "toggle theme",
-                            tint = colors.grayedTextColor
-                        )
+                    Surface(modifier = Modifier.padding(horizontal = 10.dp), shape = AppShapes.rounded12){
+                        IconButton(onClick = onToggleTheme){
+                            Icon(
+                                imageVector = if (isDarkTheme) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
+                                contentDescription = "toggle theme",
+                                tint = if (isDarkTheme) colors.activeInvertedTextColor else colors.activeTextColor,
+                                modifier = Modifier.size(36.dp)
+                            )
+                        }
                     }
 
                 }
 
                 HorizontalDivider(modifier = Modifier
                     .padding(horizontal = 12.dp, vertical = 4.dp),
-                    color = colors.selectionColor,
+                    color = colors.dividerColor,
                 )
 
                 BasicTextField(

@@ -102,7 +102,7 @@ fun Sidebar(
 
         HorizontalDivider(modifier = Modifier
             .padding(horizontal = 12.dp, vertical = 4.dp),
-            color = colors.selectionColor,
+            color = colors.dividerColor,
         )
 
 
