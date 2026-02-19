@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.text.*
 import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextField
 import androidx.compose.material3.Text
@@ -15,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import example.feb.ui.AppColors
 
 
 @Composable
@@ -23,7 +25,7 @@ fun MainContent(
     onContentChange: (String) -> Unit
 ) {
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().padding(4.dp),
         contentAlignment = Alignment.Center
     ) {
         if (selectedChapter == null) {
@@ -37,14 +39,15 @@ fun MainContent(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
-                        .padding(18.dp),
+                        .padding(20.dp),
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp,
                     text = selectedChapter.title,)
 
-                Spacer(Modifier.height(4.dp))
-                Divider()
-                Spacer(Modifier.height(4.dp))
+                HorizontalDivider(modifier = Modifier
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                    color = AppColors.selectionColor,
+                )
 
                 BasicTextField(
                     value = selectedChapter.content,

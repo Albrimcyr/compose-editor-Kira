@@ -18,7 +18,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -44,7 +46,8 @@ fun Sidebar(
         modifier = Modifier
             .then(modifier)
             .fillMaxHeight()
-            .background(AppColors.sidebarColor),
+            .background(AppColors.sidebarColor)
+            .padding(4.dp),
 
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -60,7 +63,7 @@ fun Sidebar(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
                     .weight(0.5f)
-                    .padding(12.dp),
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
                 fontWeight = FontWeight.Bold,
                 fontSize = 24.sp,
                 color = AppColors.whiteTextColor,
@@ -70,6 +73,7 @@ fun Sidebar(
                 text = {
                     Text(
                         text = "Add",
+                        color = AppColors.whiteTextColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -78,7 +82,8 @@ fun Sidebar(
                 icon = {
                     Icon(
                         imageVector = Icons.Filled.Add,
-                        contentDescription = "Add"
+                        contentDescription = "Add",
+                        tint = AppColors.whiteTextColor
                     )
                 },
                 onClick = onAddChapter,
@@ -96,7 +101,11 @@ fun Sidebar(
         }
 
 
-        Divider()
+        HorizontalDivider(modifier = Modifier
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+            color = AppColors.selectionColor,
+        )
+
 
         LazyColumn (
             modifier = Modifier.fillMaxWidth(),

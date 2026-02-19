@@ -12,9 +12,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.WideNavigationRailDefaults.colors
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -86,9 +88,13 @@ fun ChapterItem(
 
             if (isEditing) {
                 OutlinedTextField(
-                    value = draftTitle ?: "",
+                    value = if (draftTitle == "New chapter") "" else draftTitle ?: "",
                     onValueChange = onDraftChange,
                     singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = AppColors.whiteTextColor,
+                        unfocusedTextColor = AppColors.grayedTextColor
+                    ),
                     shape = AppShapes.rounded12,
                     modifier = Modifier
                         .weight(1f)
@@ -122,7 +128,8 @@ fun ChapterItem(
                     ){
                         Icon(
                             imageVector = Icons.Default.MoreVert,
-                            "more"
+                            "more",
+                            tint = whiteTextColor,
                         )
                     }
 

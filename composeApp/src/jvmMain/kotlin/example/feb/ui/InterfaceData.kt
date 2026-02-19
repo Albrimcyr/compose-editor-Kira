@@ -12,5 +12,5 @@ object AppColors {
     val selectionColor = Color(0xFF303338)
     val sidebarColor = Color(0xFF1A1E24)
     val whiteTextColor = Color(0xFFFFFFFF)
-    val grayedTextColor = Color(0xFFBFBFBF)
+    val grayedTextColor = Color(0xFFACACAC)
 }

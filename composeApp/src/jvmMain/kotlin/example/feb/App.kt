@@ -29,6 +29,7 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.unit.dp
 import java.awt.Cursor
 import androidx.compose.ui.input.pointer.pointerHoverIcon
+import example.feb.ui.AppColors
 
 //  - - - - -
 //  model
@@ -169,7 +170,7 @@ fun App() {
 
         val viewModel = remember {AppViewModel()}
 
-        var split by remember { mutableStateOf(0.20f) }
+        var split by remember { mutableStateOf(0.40f) }
         val minSplit = 0.10f
         val maxSplit = 0.50f
 
@@ -223,18 +224,16 @@ fun App() {
                     split = (split + deltaFraction).coerceIn(minSplit, maxSplit)
                 }
 
-                val divColor = Color(0x61666666)
-
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
-                        .width(1.dp)
+                        .width(5.dp)
                         .draggable(
                             orientation = Orientation.Horizontal,
                             state = dragState,
                         )
                         .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR)))
-                        .background(divColor)
+                        .background(AppColors.sidebarColor)
                 )
 
 
