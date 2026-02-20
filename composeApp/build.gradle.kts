@@ -36,11 +36,11 @@ kotlin {
 
 compose.desktop {
     application {
-        mainClass = "shadow.slave.MainKt"
+        mainClass = "example.feb.MainKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "shadow.slave"
+            packageName = "forMari"
             packageVersion = "1.0.0"
         }
     }

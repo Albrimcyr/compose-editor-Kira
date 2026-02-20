@@ -1,4 +1,4 @@
-rootProject.name = "ShadowSlave"
+rootProject.name = "forMari"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
