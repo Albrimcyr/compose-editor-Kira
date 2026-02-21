@@ -1,6 +1,6 @@
 package example.feb.ui.elements
 
-import java.util.UUID;
+import java.util.UUID
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -35,9 +35,8 @@ fun Sidebar(
     onAddChapter: () -> Unit,
     onSelectChapter: (UUID) -> Unit,
     onEditChapter: (UUID) -> Unit,
-    onRenameCommit: () -> Unit,
+    onRenameCommit: (UUID, String) -> Unit,
     onDeleteChapter: (UUID) -> Unit,
-    onEditDraftChange: (String) -> Unit,
     colors: AppColors
 ) {
 
@@ -119,26 +118,16 @@ fun Sidebar(
                     editingState is EditingState.Renaming &&
                             editingState.id == chapter.id
 
-                val draft =
-                    (editingState as? EditingState.Renaming)?.draft
-
                 ChapterItem(
-
+                    id = chapter.id,
                     title = chapter.title,
                     isSelected = chapter.id == selectedChapterID,
                     isEditing = isEditing,
-
                     onSelect = { onSelectChapter(chapter.id) },
                     onEdit = { onEditChapter(chapter.id) },
-
-                    draftTitle = if (isEditing) draft else null,
-                    onDraftChange = onEditDraftChange,
-
-                    onRenameCommit = onRenameCommit,
-
                     onDelete = { onDeleteChapter(chapter.id) },
-
-                    colors = colors,
+                    onRenameCommit = onRenameCommit,
+                    colors = colors
                 )
 
             }

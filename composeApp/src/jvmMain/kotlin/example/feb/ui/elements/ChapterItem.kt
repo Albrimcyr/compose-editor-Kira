@@ -12,6 +12,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,21 +27,20 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import example.feb.ui.AppColors
 import example.feb.ui.AppShapes
+import java.util.UUID
 
 
 @Composable
 fun ChapterItem(
+    id: UUID,
     title: String,
     isSelected: Boolean,
     isEditing: Boolean,
 
-    draftTitle: String?,
-    onDraftChange: (String) -> Unit,
-
     onSelect: () -> Unit,
     onDelete: () -> Unit,
     onEdit: () -> Unit,
-    onRenameCommit: () -> Unit,
+    onRenameCommit: (UUID, String) -> Unit,
 
     colors: AppColors
 ) {
@@ -49,6 +49,11 @@ fun ChapterItem(
 
     // Surface -> Row
     // [ text / text-field - button in the box  - button in the box ]
+
+    var localText by remember(isEditing, id) { mutableStateOf(title) }
+    LaunchedEffect(isEditing, title, id) {
+        if (isEditing) localText = title
+    }
 
     Surface(
         shape = AppShapes.rounded12,
@@ -76,8 +81,8 @@ fun ChapterItem(
 
             if (isEditing) {
                 OutlinedTextField(
-                    value = if (draftTitle == "New chapter") "" else draftTitle ?: "",
-                    onValueChange = onDraftChange,
+                    value = localText,
+                    onValueChange = { localText = it },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = colors.activeTextColor,
@@ -86,10 +91,9 @@ fun ChapterItem(
                     shape = AppShapes.rounded12,
                     modifier = Modifier
                         .weight(1f)
-//                        .padding(2.dp)
                         .onPreviewKeyEvent() {
                             if (it.key == Key.Enter) {
-                                onRenameCommit()
+                                onRenameCommit(id, localText)
                                 true
                             } else false
                         }

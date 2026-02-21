@@ -9,8 +9,10 @@ class InMemoryChapterRepository(
 ) : ChapterRepository {
 
     // Map is easier since it O(1) instead of O(n)
-    private val storage: MutableMap<UUID, Chapter> =
-        seed.associateBy { it.id }.toMutableMap()
+    private val storage: LinkedHashMap<UUID, Chapter> =
+        LinkedHashMap<UUID, Chapter>().apply {
+            seed.forEach { put(it.id, it) }
+        }
 
     // convert data for Interface
     override suspend fun loadAll(): List<Chapter> =
