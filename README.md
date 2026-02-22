@@ -31,6 +31,8 @@ The application is a chapter-based note editor supporting:
 
 The project is intentionally structured to be scalable and testable.
 
+![Architecture Diagram](composeApp/docs/chart.png)
+
 ---
 
 ## Build & Run (Desktop JVM)
