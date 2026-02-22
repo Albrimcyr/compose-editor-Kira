@@ -200,12 +200,12 @@ private fun EditorToolbar(
 
     val spanStyle = state.currentSpanStyle
 
-    val isBold = spanStyle.fontWeight == FontWeight.Bold
-    val isItalic = spanStyle.fontStyle == FontStyle.Italic
-    val isUnderline = spanStyle.textDecoration?.contains(TextDecoration.Underline) == true
-    val isStrike = spanStyle.textDecoration?.contains(TextDecoration.LineThrough) == true
-    val isCode = state.isCodeSpan
-    val isOrderedList = state.isOrderedList
+    val isBold          = spanStyle.fontWeight == FontWeight.Bold
+    val isItalic        = spanStyle.fontStyle == FontStyle.Italic
+    val isUnderline     = spanStyle.textDecoration?.contains(TextDecoration.Underline) == true
+    val isStrike        = spanStyle.textDecoration?.contains(TextDecoration.LineThrough) == true
+    val isCode          = state.isCodeSpan
+    val isOrderedList   = state.isOrderedList
     val isUnorderedList = state.isUnorderedList
 
     val baseFontSize = 16.sp
@@ -273,8 +273,8 @@ private fun EditorToolbar(
             contentDescription = "strikethrough",
             isActive = isStrike,
             colors = colors,
-            onClick = { state.toggleSpanStyle(SpanStyle(textDecoration = TextDecoration.LineThrough))
-                        editorFocusRequester.requestFocus() }
+            onClick = { safeClick(editorFocusRequester) {
+                        state.toggleSpanStyle(SpanStyle(textDecoration = TextDecoration.LineThrough))} }
         )
 
         ToolbarToggleButton(

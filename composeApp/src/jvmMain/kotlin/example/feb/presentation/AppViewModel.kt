@@ -11,13 +11,16 @@ import kotlinx.coroutines.channels.Channel
 import java.util.UUID
 
 
-/** MVVM ViewModel
+/** MVVM + UDF ViewModel
 
    * -- one source of truth (single [AppUiState])
-   * -- deterministic ordering, commands!
-   * -- async protected! With draft content in UI.
+   * -- unidirectional data flow: UI emits intentions!
+   * -- sequential command processing!
+   * -- frequent content updates stay in-memory!
+   * -- testability: isolated UseCases!
+   * -- something else... is planned?
 
-*/
+**/
 
 
 class AppViewModel(
