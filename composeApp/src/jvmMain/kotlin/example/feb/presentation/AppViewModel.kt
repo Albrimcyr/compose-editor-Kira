@@ -29,25 +29,24 @@ class AppViewModel(
 
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
 
-    // -------------------------------------------------------------------------------------
-    // Public and Private
+    // ── State ────────────────────────────────────────────────────────────────────────────────────────────────────────
 
     private val _uiState = MutableStateFlow(AppUiState())
     val uiState: StateFlow<AppUiState> = _uiState.asStateFlow()
 
-    // -------------------------------------------------------------------------------------
-    // COMMAND QUEUE to avoid desync (Unlimited for now)
+    // ── Command Queue ────────────────────────────────────────────────────────────────────────────────────────────────
 
     private val commands = Channel<Command>(capacity = Channel.UNLIMITED)
 
     private sealed interface Command {
         data object Load : Command
         data object AddChapter : Command
-        data class  SelectChapter(val id: UUID) : Command
-        data class  StartRenaming(val id: UUID) : Command
-        data class  RenameCommit(val id: UUID, val title: String) : Command
-        data class  DeleteChapter(val id: UUID) : Command
-        data class  PersistSnapshot(val chapter: Chapter) : Command
+        data class  SelectChapter   (val id: UUID) : Command
+        data class  StartRenaming   (val id: UUID) : Command
+        data class  RenameCommit    (val id: UUID, val title: String) : Command
+        data class  DeleteChapter   (val id: UUID) : Command
+        data class  ContentChanged  (val id: UUID, val html: String) : Command
+        data class  CommitDraft     (val id: UUID) : Command
         data object Esc : Command
         data object ToggleTheme : Command
     }
@@ -55,15 +54,16 @@ class AppViewModel(
     private suspend fun commandLoop() {
         for (cmd in commands) {
             when (cmd) {
-                is Command.Load ->              handleLoad()
-                is Command.AddChapter ->        handleAddChapter()
-                is Command.SelectChapter ->     handleSelect(cmd.id)
-                is Command.StartRenaming ->     handleStartRenaming(cmd.id)
-                is Command.RenameCommit ->      handleRenameCommit(cmd.id, cmd.title)
-                is Command.DeleteChapter ->     handleDelete(cmd.id)
-                is Command.PersistSnapshot ->   handlePersistSnapshot(cmd.chapter)
-                is Command.Esc ->               handleEsc()
-                is Command.ToggleTheme ->       handleToggleTheme()
+                is Command.Load ->                  handleLoad()
+                is Command.AddChapter ->            handleAddChapter()
+                is Command.SelectChapter ->         handleSelect(cmd.id)
+                is Command.StartRenaming ->         handleStartRenaming(cmd.id)
+                is Command.RenameCommit ->          handleRenameCommit(cmd.id, cmd.title)
+                is Command.DeleteChapter ->         handleDelete(cmd.id)
+                is Command.ContentChanged ->        handleContentChanged(cmd.id, cmd.html)
+                is Command.CommitDraft ->           handleCommitDraft(cmd.id)
+                is Command.Esc ->                   handleEsc()
+                is Command.ToggleTheme ->           handleToggleTheme()
             }
         }
     }
@@ -72,33 +72,21 @@ class AppViewModel(
         commands.trySend(command)
     }
 
-    // -------------------------------------------------------------------------------------
-    // PUBLIC API
+    // ── PUBLIC API ───────────────────────────────────────────────────────────────────────────────────────────────────
 
     // Discrete Commands
-    fun onAddChapter() =                          dispatch(Command.AddChapter)
-    fun onSelectChapter(id: UUID) =               dispatch(Command.SelectChapter(id))
-    fun onStartRenaming(id: UUID) =               dispatch(Command.StartRenaming(id))
-    fun onRenameCommit(id: UUID, title: String) = dispatch(Command.RenameCommit(id, title))
-    fun onDeleteChapter(id: UUID) =               dispatch(Command.DeleteChapter(id))
-    fun onEsc() =                                 dispatch(Command.Esc)
-    fun onDel() { uiState.value.selectedId?.let { dispatch(Command.DeleteChapter(it)) } }
-    fun onToggleTheme() =                         dispatch(Command.ToggleTheme)
+    fun onAddChapter() =                            dispatch(Command.AddChapter)
+    fun onSelectChapter(id: UUID) =                 dispatch(Command.SelectChapter(id))
+    fun onStartRenaming(id: UUID) =                 dispatch(Command.StartRenaming(id))
+    fun onRenameCommit(id: UUID, title: String) =   dispatch(Command.RenameCommit(id, title))
+    fun onContentChange(id: UUID, html: String) =   dispatch(Command.ContentChanged(id, html))
+    fun onDeleteChapter(id: UUID) =                 dispatch(Command.DeleteChapter(id))
+    fun onEsc() =                                   dispatch(Command.Esc)
+    fun onDel() { uiState.value.selectedId?.let {   dispatch(Command.DeleteChapter(it)) } }
+    fun onToggleTheme() =                           dispatch(Command.ToggleTheme)
 
-    // Typing (immediate state update), then Debounced Persistence
+    // ── INIT / DISPOSE ───────────────────────────────────────────────────────────────────────────────────────────────
 
-    fun onContentChange(id: UUID, html: String) {
-        val updated = updateChapter(id) { it.copy(content = html) } ?: return
-        schedulePersist(updated)
-    }
-
-    // -------------------------------------------------------------------------------------
-
-    // DEBOUNCE (just in case)
-    private val persistDebounceMs = 1000L
-    private var persistJob: Job? = null
-
-    // ADD Load command to the Loop on Init.
     init {
         scope.launch { commandLoop() }
         dispatch(Command.Load)
@@ -109,24 +97,20 @@ class AppViewModel(
         scope.cancel()
     }
 
-    // -------------------------------------------------------------------------------------
-    // INTERNALS.
-
-    // LOAD (INTERNAL)
+    // ── LOAD ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 
     private suspend fun handleLoad() {
-
         _uiState.update { it.copy(isLoading = true, errorMessage = null, editingState = EditingState.None) }
 
         runCatching { repository.loadAll() }
-            .onSuccess { loadedRaw ->
-
-                val loaded = loadedRaw.map { ch ->
+            .onSuccess { raw ->
+                val loaded = raw.map { ch ->
                     val normalized = HtmlContentNormalizer.normalizeToHtml(ch.content)
                     if (normalized == ch.content) ch else ch.copy(content = normalized)
                 }
 
-                val selected = _uiState.value.selectedId?.takeIf { id -> loaded.any { it.id == id } }
+                val selected = _uiState.value.selectedId
+                    ?.takeIf { id -> loaded.any { it.id == id } }
                     ?: loaded.firstOrNull()?.id
 
                 _uiState.update {
@@ -135,24 +119,25 @@ class AppViewModel(
                         chapters = loaded,
                         selectedId = selected,
                         editingState = EditingState.None,
-                        errorMessage = null
+                        errorMessage = null,
+                        draftChapterId = null,
+                        draftHtml = "",
+                        isDraftDirty = false,
                     )
                 }
             }
             .onFailure { e ->
                 _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = "Load failed: ${e.message ?: "Something happened!"}"
-                    )
+                    it.copy(isLoading = false, errorMessage = "Load failed: ${e.message ?: "Unknown error"}")
                 }
             }
     }
 
 
-    // OTHERS (INTERNAL)
+    // ── HANDLERS ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
     private suspend fun handleAddChapter() {
+        flushDraft()
 
         val ch = Chapter(
             id = UUID.randomUUID(),
@@ -165,19 +150,33 @@ class AppViewModel(
                 chapters = state.chapters + ch,
                 selectedId = ch.id,
                 editingState = EditingState.None,
-                errorMessage = null
+                errorMessage = null,
+                draftChapterId = null,
+                draftHtml = "",
+                isDraftDirty = false,
             )
         }
-
-        runCatching { repository.upsert(ch) }  // just ignore. Can be logged later or smth else.
+        runCatching { repository.upsert(ch) } // just ignore. Can be logged later or smth else.
 
     }
 
     private suspend fun handleSelect(id: UUID) {
-        val exists = _uiState.value.chapters.any { it.id == id }
-        if (!exists) return
 
-        _uiState.update { it.copy(selectedId = id, editingState = EditingState.None) }
+        val state = _uiState.value
+        if (state.selectedId == id) return
+        if (state.chapters.none { it.id == id }) return
+
+        flushDraft()
+
+        _uiState.update {
+            it.copy(
+                selectedId = id,
+                editingState = EditingState.None,
+                draftChapterId = null,
+                draftHtml = "",
+                isDraftDirty = false,
+            )
+        }
     }
 
     private suspend fun handleStartRenaming(id: UUID) {
@@ -199,34 +198,52 @@ class AppViewModel(
         val state = _uiState.value
         if (state.chapters.none { it.id == id }) return
 
-        val newList = state.chapters.filterNot { it.id == id }
+        val isDeletingSelected = state.selectedId == id
+        if (isDeletingSelected) {
+            cancelDraft()
+        } else {
+            flushDraft()
+        }
 
+        val newList = state.chapters.filterNot { it.id == id }
         val newEditing = when (val es = state.editingState) {
             is EditingState.Renaming -> if (es.id == id) EditingState.None else es
             EditingState.None -> EditingState.None
         }
 
+        val newSelected = if (isDeletingSelected) newList.firstOrNull()?.id else state.selectedId
+
         _uiState.update {
             it.copy(
                 chapters = newList,
-                selectedId = null,
-                editingState = newEditing
+                selectedId = newSelected,
+                editingState = newEditing,
+                draftChapterId = if (isDeletingSelected) null else it.draftChapterId,
+                draftHtml = if (isDeletingSelected) "" else it.draftHtml,
+                isDraftDirty = if (isDeletingSelected) false else it.isDraftDirty,
             )
         }
-
         runCatching { repository.delete(id) }
     }
 
-    private suspend fun handlePersistSnapshot(snapshot: Chapter) {
+    private suspend fun handleContentChanged(id: UUID, html: String) {
+        if (_uiState.value.selectedId != id) return
 
-        // keep dead :)
-        val stillExists = _uiState.value.chapters.any { it.id == snapshot.id }
-        if (!stillExists) return
-
-        // persist the latest state
-        val latest = _uiState.value.chapters.firstOrNull { it.id == snapshot.id } ?: return
-        runCatching { repository.upsert(latest) }
+        _uiState.update {
+            it.copy(draftChapterId = id, draftHtml = html, isDraftDirty = true)
+        }
+        scheduleDebouncedCommit(id)
     }
+
+    private suspend fun handleCommitDraft(id: UUID) {
+        val state = _uiState.value
+        if (state.draftChapterId != id || !state.isDraftDirty) return
+
+        val updated = updateChapter(id) { it.copy(content = state.draftHtml) } ?: return
+        _uiState.update { it.copy(isDraftDirty = false) }
+        runCatching { repository.upsert(updated) }
+    }
+
 
     private suspend fun handleEsc() {
         _uiState.update { it.copy(editingState = EditingState.None) }
@@ -237,29 +254,48 @@ class AppViewModel(
 
     }
 
-    private fun schedulePersist(snapshot: Chapter) {
+
+    // ── DRAFT HELPERS ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    private suspend fun flushDraft() {
+        val state = _uiState.value
+        val id = state.draftChapterId ?: return
+        if (!state.isDraftDirty) return
+
+        persistJob?.cancel()
+        persistJob = null
+
+        val updated = updateChapter(id) { it.copy(content = state.draftHtml) } ?: return
+        _uiState.update { it.copy(isDraftDirty = false) }
+        runCatching { repository.upsert(updated) }
+    }
+
+    private fun cancelDraft() {
+        persistJob?.cancel()
+        persistJob = null
+    }
+
+    // ── DEBOUNCE  ────────────────────────────────────────────────────────────────────────────────────────────────────
+    private val persistDebounceMs = 1_000L
+    private var persistJob: Job? = null
+
+    private fun scheduleDebouncedCommit(id: UUID) {
         persistJob?.cancel()
         persistJob = scope.launch {
             delay(persistDebounceMs)
-            dispatch(Command.PersistSnapshot(snapshot))
+            dispatch(Command.CommitDraft(id))
         }
     }
 
-    // -------------------------------------------------------------------------------------
-    // HELPERS
+    // ── HELPERS  ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
-    private fun getChapterOrNull(id: UUID): Chapter? =
-        _uiState.value.chapters.firstOrNull { it.id == id }
-
-
-    private inline fun updateChapter(id: UUID, transform: (Chapter) -> Chapter): Chapter? {
-        val current = getChapterOrNull(id) ?: return null
+    private fun updateChapter(id: UUID, transform: (Chapter) -> Chapter): Chapter? {
+        val current = _uiState.value.chapters.firstOrNull { it.id == id } ?: return null
         val updated = transform(current)
-
         _uiState.update { state ->
             state.copy(chapters = state.chapters.map { if (it.id == id) updated else it })
         }
-
         return updated
     }
+
 }

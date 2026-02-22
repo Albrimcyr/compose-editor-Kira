@@ -37,7 +37,6 @@ import example.feb.ui.AppColors
 import example.feb.ui.AppShapes
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import java.util.UUID
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
@@ -72,6 +71,8 @@ fun MainContent(
 
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
 
+            // ── HEADER ───────────────────────────────────────────────────────────────────────────────────────────
+
                 Text(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -101,9 +102,8 @@ fun MainContent(
                 color = colors.dividerColor,
                 )
 
-            // -------------------------------------------------------------------------------
-            // TEXT AREA
 
+            // ── TEXT AREA ────────────────────────────────────────────────────────────────────────────────────────────
 
             ChapterRichEditor(
                 chapterId = selectedId,
@@ -117,6 +117,8 @@ fun MainContent(
     }
 }
 
+// ── EDITOR ───────────────────────────────────────────────────────────────────────────────────────────────────────────
+
 @Composable
 private fun ChapterRichEditor(
     chapterId: UUID,
@@ -125,17 +127,18 @@ private fun ChapterRichEditor(
     colors: AppColors,
 ) {
     key(chapterId) {
+
         val richTextState = rememberRichTextState()
         val editorFocusRequester = remember { FocusRequester() }
 
-        var editorHtmlCache by remember { mutableStateOf("") }
-        var skipNextEditorEmission by remember { mutableStateOf(false) }
+        var loadedHtmlCache by remember { mutableStateOf("") }
+        var isExternalUpdate by remember { mutableStateOf(false) }
 
         LaunchedEffect(storedHtml) {
-            if (storedHtml != editorHtmlCache) {
-                skipNextEditorEmission = true
+            if (storedHtml != loadedHtmlCache) {
+                isExternalUpdate = true
                 richTextState.setHtml(storedHtml)
-                editorHtmlCache = richTextState.toHtml()
+                loadedHtmlCache = richTextState.toHtml()
             }
         }
 
@@ -143,15 +146,14 @@ private fun ChapterRichEditor(
             snapshotFlow { richTextState.annotatedString }
                 .distinctUntilChanged()
                 .collectLatest {
-                    if (skipNextEditorEmission) {
-                        skipNextEditorEmission = false
+                    if (isExternalUpdate) {
+                        isExternalUpdate = false
                         return@collectLatest
                     }
-
-                    val nextHtml = richTextState.toHtml()
-                    if (nextHtml != editorHtmlCache) {
-                        editorHtmlCache = nextHtml
-                        onHtmlChange(chapterId, nextHtml)
+                    val html = richTextState.toHtml()
+                    if (html != loadedHtmlCache) {
+                        loadedHtmlCache = html
+                        onHtmlChange(chapterId, html)
                     }
                 }
         }
@@ -186,7 +188,7 @@ private fun ChapterRichEditor(
 }
 
 
-// -----------------------------------------------------------------------------------------
+// ── EDITOR TOOLBAR ───────────────────────────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun EditorToolbar(
@@ -196,30 +198,28 @@ private fun EditorToolbar(
     editorFocusRequester: FocusRequester,
 ) {
 
-    val currentSpanStyle = state.currentSpanStyle
+    val spanStyle = state.currentSpanStyle
 
-    val isBold = currentSpanStyle.fontWeight == FontWeight.Bold
-    val isItalic = currentSpanStyle.fontStyle == FontStyle.Italic
-    val isUnderline = currentSpanStyle.textDecoration?.contains(TextDecoration.Underline) == true
-    val isStrike = currentSpanStyle.textDecoration?.contains(TextDecoration.LineThrough) == true
-
+    val isBold = spanStyle.fontWeight == FontWeight.Bold
+    val isItalic = spanStyle.fontStyle == FontStyle.Italic
+    val isUnderline = spanStyle.textDecoration?.contains(TextDecoration.Underline) == true
+    val isStrike = spanStyle.textDecoration?.contains(TextDecoration.LineThrough) == true
     val isCode = state.isCodeSpan
     val isOrderedList = state.isOrderedList
     val isUnorderedList = state.isUnorderedList
 
     val baseFontSize = 16.sp
-    val stepSp = 2f
-    val minSp = 10f
-    val maxSp = 32f
+    val step         = 2f
+    val min          = 10f
+    val max          = 32f
 
-    fun currentFontSize(): TextUnit {
+    fun currentFontSizeSp(): Float {
         val fs = state.currentSpanStyle.fontSize
-        return if (fs.isUnspecified) baseFontSize else fs
+        return if (fs.isUnspecified) baseFontSize.value else fs.value
     }
 
-    fun applyFontSize(nextSpValue: Float) {
-        val clamped = nextSpValue.coerceIn(minSp, maxSp).sp
-        state.toggleSpanStyle(SpanStyle(fontSize = clamped))
+    fun applyFontSize(sp: Float) {
+        state.toggleSpanStyle(SpanStyle(fontSize = sp.coerceIn(min, max).sp))
     }
 
 
@@ -230,8 +230,7 @@ private fun EditorToolbar(
             contentDescription = "decrease font size",
             colors = colors,
             onClick = {
-                val cur = currentFontSize().value
-                applyFontSize(cur - stepSp) }
+                applyFontSize(currentFontSizeSp() - step) }
         )
 
         ToolbarIconButton(
@@ -239,8 +238,7 @@ private fun EditorToolbar(
             contentDescription = "increase font size",
             colors = colors,
             onClick = {
-                val cur = currentFontSize().value
-                applyFontSize(cur + stepSp) }
+                applyFontSize(currentFontSizeSp() + step) }
         )
 
         ToolbarToggleButton(
@@ -309,6 +307,8 @@ private fun EditorToolbar(
     }
 }
 
+// ── BUTTONS ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+
 @Composable
 private fun ToolbarToggleButton(
     icon: ImageVector,
@@ -324,7 +324,8 @@ private fun ToolbarToggleButton(
     ) {
         IconButton(
             modifier = Modifier.focusProperties { canFocus = false },
-            onClick = onClick) {
+            onClick = onClick)
+        {
             Icon(
                 imageVector = icon,
                 modifier = Modifier.size(16.dp),
@@ -348,7 +349,10 @@ private fun ToolbarIconButton(
         color = colors.sidebarColor,
         modifier = Modifier.size(28.dp)
     ) {
-        IconButton(onClick = onClick, modifier = Modifier.focusProperties { canFocus = false }) {
+        IconButton(
+            onClick = onClick,
+            modifier = Modifier.focusProperties { canFocus = false })
+        {
             Icon(
                 imageVector = icon,
                 modifier = Modifier.size(16.dp),

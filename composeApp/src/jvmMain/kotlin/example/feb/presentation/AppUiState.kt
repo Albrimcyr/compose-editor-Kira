@@ -4,7 +4,8 @@ import example.feb.domain.model.Chapter
 import java.util.UUID
 
 
-// UI-only protection for the sidebar list. Derived from [AppUIState.chapters]
+// ─── UI ONLY ───────────────────────────────────────────────────────
+// Protection for the sidebar list. Derived from [AppUIState.chapters]
 // Just in case.
 
 data class ChapterRowUi(
@@ -18,8 +19,10 @@ sealed interface EditingState {
 }
 
 
-//  SINGLE source of truth for the UI. Stores only state. Else is derived to avoid desynchronization. And for clarity.
-//  Could be improved later.
+// ─── SINGLE SOURCE OF TRUTH FOR THE UI ───────────────────────────────────────────────────────
+//  Stores only state.
+//  Else is derived to avoid desynchronization. And for clarity.
+//  chapterRows Could be improved later to map.
 
 data class AppUiState(
 
@@ -28,23 +31,29 @@ data class AppUiState(
     val selectedId: UUID? = null,
     val editingState: EditingState = EditingState.None,
     val isDarkTheme: Boolean = true,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+
+    // DRAFT
+    val draftChapterId: UUID? = null,
+    val draftHtml: String = "",
+    val isDraftDirty: Boolean = false,
+
 ){
 
-    //  can be heavy to compute O(n) with 1000+ chapters, might be changed to derived cache later ,
-    val selected: Chapter?
-        get() = selectedId?.let { id ->
-            chapters.firstOrNull { it.id == id }
-        }
+    // ─── DERIVED ─────────────────────────────────────────────────────────────────────────────
 
-    val hasSelection: Boolean
-        get() = selected != null
+    val selected: Chapter?
+        get() = selectedId?.let { id -> chapters.firstOrNull { it.id == id } }
 
     val selectedTitle: String
         get() = selected?.title.orEmpty()
 
     val selectedContent: String
-        get() = selected?.content.orEmpty()
+        get() {
+            val id = selectedId ?: return ""
+            return if (draftChapterId == id) draftHtml else selected?.content.orEmpty()
+        }
+
 
     val chapterRows: List<ChapterRowUi> get() = chapters.map { ChapterRowUi(it.id, it.title) }
 
