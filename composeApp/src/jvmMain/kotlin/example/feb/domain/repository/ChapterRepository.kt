@@ -1,4 +1,4 @@
-package example.feb.data
+package example.feb.domain.repository
 
 import example.feb.domain.model.Chapter
 import java.util.UUID

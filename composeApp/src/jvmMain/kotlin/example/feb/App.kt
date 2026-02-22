@@ -61,9 +61,7 @@ fun App(viewModel: AppViewModel) {
                 }
             ) {
 
-                //
-                //      LEFT PART
-                //
+                // ── LEFT PART ────────────────────────────────────────────────────────────────────────────────────────
 
                 Sidebar(
                     modifier = Modifier
@@ -84,9 +82,7 @@ fun App(viewModel: AppViewModel) {
                 )
 
 
-                //
-                //      DIVIDER
-                //
+                // ── DIVIDER ──────────────────────────────────────────────────────────────────────────────────────────
 
 
                 val dragState = rememberDraggableState { delta ->
@@ -107,9 +103,7 @@ fun App(viewModel: AppViewModel) {
                 )
 
 
-                //
-                //      RIGHT PART
-                //
+                // ── RIGHT PART ───────────────────────────────────────────────────────────────────────────────────────
 
                 Box(
                     modifier = Modifier.fillMaxHeight().weight(1f)
