@@ -2,15 +2,13 @@ package example.feb.presentation
 
 import example.feb.data.ChapterRepository
 import example.feb.domain.model.Chapter
+import example.feb.domain.text.HtmlContentNormalizer
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.debounce
 
 import java.util.UUID
 
@@ -89,33 +87,20 @@ class AppViewModel(
 
     // Typing (immediate state update), then Debounced Persistence
 
-    fun onContentChange(text: String) {
-        val updated = updateSelectedChapter { it.copy(content = text) } ?: return
-        persistRequests.tryEmit(updated)
+    fun onContentChange(id: UUID, html: String) {
+        val updated = updateChapter(id) { it.copy(content = html) } ?: return
+        schedulePersist(updated)
     }
 
     // -------------------------------------------------------------------------------------
 
     // DEBOUNCE (just in case)
     private val persistDebounceMs = 1000L
-    private val persistRequests = MutableSharedFlow<Chapter>(
-        extraBufferCapacity = 64,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST
-    )
+    private var persistJob: Job? = null
 
     // ADD Load command to the Loop on Init.
     init {
         scope.launch { commandLoop() }
-
-        // persistence pipeline: debounce then serialize via actor
-        scope.launch {
-            persistRequests
-                .debounce(persistDebounceMs)
-                .collect { snapshot ->
-                    dispatch(Command.PersistSnapshot(snapshot))
-                }
-        }
-
         dispatch(Command.Load)
     }
 
@@ -134,7 +119,12 @@ class AppViewModel(
         _uiState.update { it.copy(isLoading = true, errorMessage = null, editingState = EditingState.None) }
 
         runCatching { repository.loadAll() }
-            .onSuccess { loaded ->
+            .onSuccess { loadedRaw ->
+
+                val loaded = loadedRaw.map { ch ->
+                    val normalized = HtmlContentNormalizer.normalizeToHtml(ch.content)
+                    if (normalized == ch.content) ch else ch.copy(content = normalized)
+                }
 
                 val selected = _uiState.value.selectedId?.takeIf { id -> loaded.any { it.id == id } }
                     ?: loaded.firstOrNull()?.id
@@ -159,7 +149,7 @@ class AppViewModel(
             }
     }
 
-    // -------------------------------------------------------------------------------------
+
     // OTHERS (INTERNAL)
 
     private suspend fun handleAddChapter() {
@@ -229,7 +219,7 @@ class AppViewModel(
 
     private suspend fun handlePersistSnapshot(snapshot: Chapter) {
 
-        // Do not RES.
+        // keep dead :)
         val stillExists = _uiState.value.chapters.any { it.id == snapshot.id }
         if (!stillExists) return
 
@@ -244,6 +234,15 @@ class AppViewModel(
 
     private suspend fun handleToggleTheme() {
         _uiState.update { it.copy(isDarkTheme = !it.isDarkTheme) }
+
+    }
+
+    private fun schedulePersist(snapshot: Chapter) {
+        persistJob?.cancel()
+        persistJob = scope.launch {
+            delay(persistDebounceMs)
+            dispatch(Command.PersistSnapshot(snapshot))
+        }
     }
 
     // -------------------------------------------------------------------------------------
@@ -263,10 +262,4 @@ class AppViewModel(
 
         return updated
     }
-
-    private inline fun updateSelectedChapter(transform: (Chapter) -> Chapter): Chapter? {
-        val id = _uiState.value.selectedId ?: return null
-        return updateChapter(id, transform)
-    }
-
 }

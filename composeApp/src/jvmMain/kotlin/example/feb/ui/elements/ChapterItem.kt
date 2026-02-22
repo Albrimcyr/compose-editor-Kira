@@ -20,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
@@ -81,6 +82,7 @@ fun ChapterItem(
 
             if (isEditing) {
 
+                var isFocused by remember(id, isEditing) { mutableStateOf(false) }
 
                 OutlinedTextField(
                     value = localText,
@@ -93,6 +95,16 @@ fun ChapterItem(
                     shape = AppShapes.rounded12,
                     modifier = Modifier
                         .weight(1f)
+
+                        .onFocusChanged { state ->
+                            if (state.isFocused) {
+                                isFocused = true
+                            } else if (isFocused) {
+                                onRenameCommit(id, localText)
+                                isFocused = false
+                            }
+                        }
+
                         .onPreviewKeyEvent() {
                             if (it.key == Key.Enter) {
                                 onRenameCommit(id, localText)

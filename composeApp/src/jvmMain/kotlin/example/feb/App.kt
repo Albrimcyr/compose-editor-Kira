@@ -32,8 +32,6 @@ import example.feb.ui.colorsFor
 import example.feb.ui.elements.MainContent
 import example.feb.ui.elements.Sidebar
 
-
-// UI layer
 @Composable
 fun App(viewModel: AppViewModel) {
 

@@ -6,6 +6,7 @@ import androidx.compose.ui.unit.dp
 
 object AppShapes {
     val rounded12 = RoundedCornerShape(12.dp)
+    val rounded6 = RoundedCornerShape(6.dp)
 }
 
 data class AppColors(
