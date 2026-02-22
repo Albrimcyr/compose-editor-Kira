@@ -118,7 +118,7 @@ fun App(viewModel: AppViewModel) {
                 ) {
 
                     MainContent(
-                        hasSelection = uiState.hasSelection,
+                        selectedId = uiState.selectedId,
                         title = uiState.selectedTitle,
                         content = uiState.selectedContent,
                         onContentChange = viewModel::onContentChange,
