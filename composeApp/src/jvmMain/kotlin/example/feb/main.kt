@@ -5,9 +5,15 @@ import example.feb.domain.usecase.*
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import example.feb.data.InMemoryChapterRepository
+import example.feb.data.local.AppStoragePaths
+import example.feb.data.local.FileChapterRepository
 import example.feb.presentation.AppViewModel
 
 fun main() = application {
+
+//    val storageDir = AppStoragePaths.defaultAppDataDir(appName = "JSON TEST")
+//    val repository = FileChapterRepository(rootDir = storageDir)
+
     val repository = InMemoryChapterRepository()
 
     val viewModel = AppViewModel(

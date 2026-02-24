@@ -305,6 +305,7 @@ class AppViewModel(
     }
 
     // ── DEBOUNCE  ────────────────────────────────────────────────────────────────────────────────────────────────────
+
     private val persistDebounceMs = 1_000L
     private var persistJob: Job? = null
 
