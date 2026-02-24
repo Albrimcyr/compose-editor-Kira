@@ -40,5 +40,10 @@ class FileChapterRepository(
 
     // to be implemented?
 
+    override suspend fun loadAll(): List<Chapter> = withContext(dispatcher) {
+        // test
+
+    }
+
 
 }
