@@ -6,7 +6,6 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import example.feb.data.InMemoryChapterRepository
 import example.feb.data.local.AppStoragePaths
-import example.feb.data.local.FileChapterRepository
 import example.feb.presentation.AppViewModel
 
 fun main() = application {
