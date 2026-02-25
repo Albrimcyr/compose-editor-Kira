@@ -41,8 +41,8 @@ import java.util.UUID
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.isUnspecified
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mohamedrejeb.richeditor.ui.BasicRichTextEditor
 
 

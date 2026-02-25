@@ -234,7 +234,7 @@ class AppViewModel(
 
         deleteChapter(id)
             .onFailure { e ->
-                _uiState.update { it.copy(errorMessage = "Delete failed: ${e.message}") }
+                _uiState.update { it.copy(errorMessage = "Delete failed..?: ${e.message}") }
             }
     }
 
@@ -261,7 +261,7 @@ class AppViewModel(
                 }
             }
             .onFailure { e ->
-                _uiState.update { it.copy(errorMessage = "Save failed: ${e.message}") }
+                _uiState.update { it.copy(errorMessage = "Save failed..?: ${e.message}") }
             }
     }
 
