@@ -28,8 +28,8 @@ internal object AtomicFiles {
                 Files.move(tmp, target, REPLACE_EXISTING)
             }
 
-            //  Linux-related...? Could be improved later. Match folder-config (folders are weird)
-            FileChannel.open(target.parent, READ).use { it.force(true) }
+            // Linux-related...? Could be improved later. Match folder-config (folders are weird)
+            // FileChannel.open(target.parent, READ).use { it.force(true) }
 
         // exception any time? Nuke.
         } catch (e: Exception) {

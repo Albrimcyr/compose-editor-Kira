@@ -10,9 +10,8 @@ import example.feb.presentation.AppViewModel
 
 fun main() = application {
 
-//    val storageDir = AppStoragePaths.defaultAppDataDir(appName = "JSON TEST")
-//    val repository = FileChapterRepository(rootDir = storageDir)
-
+//   val storageDir = AppStoragePaths.defaultAppDataDir(appName = "BookNotes")
+//   val repository = FileChapterRepository(rootDir = storageDir)
     val repository = InMemoryChapterRepository()
 
     val viewModel = AppViewModel(

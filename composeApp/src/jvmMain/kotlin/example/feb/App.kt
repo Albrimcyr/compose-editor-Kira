@@ -6,6 +6,8 @@ import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
@@ -26,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.ui.input.key.onKeyEvent
 
 import example.feb.ui.colorsFor
@@ -40,6 +43,8 @@ fun App(viewModel: AppViewModel) {
         val uiState by viewModel.uiState.collectAsState() // subscribed
 
         val colors = colorsFor(uiState.isDarkTheme)
+
+        var showError by remember(uiState.errorMessage) { mutableStateOf(uiState.errorMessage != null) }
 
         var split by remember { mutableStateOf(0.40f) }
         val minSplit = 0.10f
@@ -62,6 +67,19 @@ fun App(viewModel: AppViewModel) {
             ) {
 
                 // ── LEFT PART ────────────────────────────────────────────────────────────────────────────────────────
+
+                if (showError) {
+                    AlertDialog(
+                        onDismissRequest = { showError = false },
+                        title = { Text("Error!!!") },
+                        text = { Text(uiState.errorMessage ?: "") },
+                        confirmButton = {
+                            Button(onClick = { showError = false }) {
+                                Text("OK")
+                            }
+                        }
+                    )
+                }
 
                 Sidebar(
                     modifier = Modifier
