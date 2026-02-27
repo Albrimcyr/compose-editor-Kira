@@ -42,7 +42,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.isUnspecified
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mohamedrejeb.richeditor.ui.BasicRichTextEditor
 
 
@@ -82,14 +81,14 @@ fun MainContent(
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp,
                     text = title,
-                    color = colors.dividerColor)
+                    color = colors.blackColor)
 
                 Surface(modifier = Modifier.padding(horizontal = 10.dp), shape = AppShapes.rounded12){
                     IconButton(onClick = onToggleTheme){
                         Icon(
                             imageVector = if (isDarkTheme) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
                             contentDescription = "toggle theme",
-                            tint = if (isDarkTheme) colors.activeInvertedTextColor else colors.activeTextColor,
+                            tint = colors.blackColor,
                             modifier = Modifier.size(36.dp)
                         )
                     }
@@ -211,7 +210,7 @@ private fun EditorToolbar(
     val baseFontSize = 16.sp
     val step         = 2f
     val min          = 10f
-    val max          = 32f
+    val max          = 100f
 
     fun currentFontSizeSp(): Float {
         val fs = state.currentSpanStyle.fontSize
@@ -219,7 +218,12 @@ private fun EditorToolbar(
     }
 
     fun applyFontSize(sp: Float) {
-        state.toggleSpanStyle(SpanStyle(fontSize = sp.coerceIn(min, max).sp))
+        val current = currentFontSizeSp()
+        val target = sp.coerceIn(min, max)
+
+        if (target == current) return // no reset on min/max size.
+
+        state.toggleSpanStyle(SpanStyle(fontSize = target.sp))
     }
 
 
@@ -319,7 +323,7 @@ private fun ToolbarToggleButton(
 ) {
     Surface(
         shape = AppShapes.rounded6,
-        color = if (isActive) colors.selectionColor else colors.sidebarColor,
+        color = if (isActive) colors.toggledColor else colors.sidebarColor,
         modifier = Modifier.size(28.dp)
     ) {
         IconButton(

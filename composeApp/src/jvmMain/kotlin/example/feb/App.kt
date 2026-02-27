@@ -111,13 +111,13 @@ fun App(viewModel: AppViewModel) {
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
-                        .width(5.dp)
+                        .width(3.dp)
                         .draggable(
                             orientation = Orientation.Horizontal,
                             state = dragState,
                         )
                         .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR)))
-                        .background(colors.sidebarColor)
+                        .background(colors.mainDividerColor)
                 )
 
 

@@ -4,7 +4,6 @@ import example.feb.domain.model.Chapter
 import example.feb.domain.repository.ChapterRepository
 import java.util.UUID
 
-// local implementation (for now)
 class InMemoryChapterRepository(
     seed: List<Chapter> = emptyList() // starting empty list
 ) : ChapterRepository {

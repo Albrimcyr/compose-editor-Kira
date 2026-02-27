@@ -20,6 +20,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
@@ -47,13 +49,19 @@ fun ChapterItem(
 ) {
 
     var menuExpanded by remember { mutableStateOf(false) }
+    val focusRequester = remember(id) { FocusRequester() }
 
     // Surface -> Row
     // [ text / text-field - button in the box  - button in the box ]
 
     var localText by remember(isEditing, id) { mutableStateOf(title) }
+
     LaunchedEffect(isEditing, title, id) {
-        if (isEditing) localText = title
+        localText = if (isEditing && localText != "New chapter") title else ""
+    }
+
+    LaunchedEffect(isEditing, id) {
+        if (isEditing) focusRequester.requestFocus()
     }
 
     Surface(
@@ -95,7 +103,7 @@ fun ChapterItem(
                     shape = AppShapes.rounded12,
                     modifier = Modifier
                         .weight(1f)
-
+                        .focusRequester(focusRequester)
                         .onFocusChanged { state ->
                             if (state.isFocused) {
                                 isFocused = true
@@ -144,6 +152,7 @@ fun ChapterItem(
                         onDismiss = { menuExpanded = false },
                         onEdit = onEdit,
                         onDelete = onDelete,
+                        colors = colors,
                     )
 
                 }
