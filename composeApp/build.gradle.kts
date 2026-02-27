@@ -21,9 +21,18 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+
+            // Icons
             implementation("org.jetbrains.compose.material:material-icons-core:1.7.3")
             implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
+
+            // Random Basic Editor
             implementation("com.mohamedrejeb.richeditor:richeditor-compose:1.0.0-rc13")
+
+            // Tests (JUnit, Coroutines)
+            implementation(kotlin("test"))
+            implementation("org.junit.jupiter:junit-jupiter:5.10.2")
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
