@@ -40,11 +40,11 @@ The project is intentionally structured to be scalable and testable.
 
 ## CI
 
-A basic GitHub Actions pipeline is included to verify that the project builds on CI.
+A basic GitHub Actions pipeline is included to verify that the project builds.
 
 ## Tests
 
-Basic JUnit tests are included for domain UseCases (currently Add / Delete).
+Basic JUnit tests are included for domain UseCases.
 
 ---
 
