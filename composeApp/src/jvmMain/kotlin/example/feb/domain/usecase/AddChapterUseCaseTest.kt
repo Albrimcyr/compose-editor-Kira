@@ -36,4 +36,5 @@ class AddChapterUseCaseTest {
         assertNotEquals(a.id, b.id)               // different?
         assertEquals(2, repo.upsertCalls)           // how many times called?
     }
+
 }

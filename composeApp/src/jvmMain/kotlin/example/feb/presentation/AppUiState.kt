@@ -32,6 +32,7 @@ data class AppUiState(
     val editingState: EditingState = EditingState.None,
     val isDarkTheme: Boolean = true,
     val errorMessage: String? = null,
+    val searchQuery: String = "",
 
     // DRAFT
     val draftChapterId: UUID? = null,
@@ -41,6 +42,19 @@ data class AppUiState(
 ){
 
     // ─── DERIVED ─────────────────────────────────────────────────────────────────────────────
+
+
+    private fun matchesSearch (chapter: Chapter, q: String): Boolean {
+        if (q.isBlank()) return true
+        val query = q.trim()
+        return chapter.title.contains(query, ignoreCase = true) ||
+               chapter.content.contains(query, ignoreCase = true)
+
+    }
+
+
+    val filteredChapters: List<Chapter>
+        get() = chapters.filter { matchesSearch(it, searchQuery) }
 
     val selected: Chapter?
         get() = selectedId?.let { id -> chapters.firstOrNull { it.id == id } }
@@ -55,6 +69,7 @@ data class AppUiState(
         }
 
 
-    val chapterRows: List<ChapterRowUi> get() = chapters.map { ChapterRowUi(it.id, it.title) }
+    val chapterRows: List<ChapterRowUi>
+        get() = filteredChapters.map { ChapterRowUi(it.id, it.title) }
 
 }

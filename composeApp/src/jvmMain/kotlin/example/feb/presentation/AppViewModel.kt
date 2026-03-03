@@ -54,6 +54,10 @@ class AppViewModel(
         data class  CommitDraft     (val id: UUID)                      : Command
         data object Esc                                                 : Command
         data object ToggleTheme                                         : Command
+
+        // search
+        data class  SearchQueryChanged (val query: String)              : Command
+        data object ClearSearch                                         : Command
     }
 
     private suspend fun commandLoop() {
@@ -69,6 +73,8 @@ class AppViewModel(
                 is Command.CommitDraft          -> handleCommitDraft(cmd.id)
                 is Command.Esc                  -> handleEsc()
                 is Command.ToggleTheme          -> handleToggleTheme()
+                is Command.SearchQueryChanged   -> handleSearchQueryChanged(cmd.query)
+                is Command.ClearSearch          -> handleClearSearch()
             }
         }
     }
@@ -89,6 +95,8 @@ class AppViewModel(
     fun onEsc()                                     = dispatch(Command.Esc)
     fun onDel() { uiState.value.selectedId?.let {     dispatch(Command.DeleteChapter(it)) } }
     fun onToggleTheme()                             = dispatch(Command.ToggleTheme)
+    fun onSearchQueryChanged(query: String)         = dispatch(Command.SearchQueryChanged(query))
+    fun onClearSearch()                             = dispatch(Command.ClearSearch)
 
     // ── INIT / DISPOSE ───────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -273,6 +281,14 @@ class AppViewModel(
     private suspend fun handleToggleTheme() {
         _uiState.update { it.copy(isDarkTheme = !it.isDarkTheme) }
 
+    }
+
+    private suspend fun handleSearchQueryChanged(query: String) {
+        _uiState.update { it.copy(searchQuery = query) }
+    }
+
+    private suspend fun handleClearSearch() {
+        _uiState.update { it.copy(searchQuery = "") }
     }
 
 

@@ -21,6 +21,7 @@ data class AppColors(
     val whiteColor: Color,
     val mainDividerColor: Color,
     val deleteColor: Color,
+    val searchColor: Color,
 )
 
 private val DarkColors = AppColors(
@@ -35,6 +36,7 @@ private val DarkColors = AppColors(
     whiteColor = Color(0xFFFFFFFF),
     blackColor = Color(0xFF000000),
     deleteColor = Color(0xFFFFE6E6),
+    searchColor = Color(0xFF2D2F39),
 )
 
 private val LightColors = AppColors(
@@ -49,6 +51,7 @@ private val LightColors = AppColors(
     whiteColor = Color(0xFFFFFFFF),
     blackColor = Color(0xFF000000),
     deleteColor = Color(0xFFFFE6E6),
+    searchColor = Color(0xFFFFF4D2),
 )
 
 // simple implementation, instead of a new Theme, just for clarity. With some prop drilling. Change later? Once all the colors are 100%.

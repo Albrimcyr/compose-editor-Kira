@@ -91,12 +91,17 @@ fun App(viewModel: AppViewModel) {
                     chapters = uiState.chapterRows,
                     selectedChapterID = uiState.selectedId,
                     editingState = uiState.editingState,
+                    searchQuery = uiState.searchQuery,
 
                     onAddChapter = viewModel::onAddChapter,
                     onSelectChapter = viewModel::onSelectChapter,
                     onEditChapter = viewModel::onStartRenaming,
                     onRenameCommit = viewModel::onRenameCommit,
-                    onDeleteChapter = viewModel::onDeleteChapter
+                    onDeleteChapter = viewModel::onDeleteChapter,
+
+                    onSearchQueryChange = viewModel::onSearchQueryChanged,
+                    onClearSearch = viewModel::onClearSearch,
+
                 )
 
 
