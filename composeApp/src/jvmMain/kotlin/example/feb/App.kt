@@ -140,7 +140,8 @@ fun App(viewModel: AppViewModel) {
 
                         colors = colors,
                         isDarkTheme = uiState.isDarkTheme,
-                        onToggleTheme = viewModel::onToggleTheme
+                        onToggleTheme = viewModel::onToggleTheme,
+                        contentStats = uiState.contentStats,
                     )
                 }
             }

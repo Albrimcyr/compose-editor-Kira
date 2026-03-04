@@ -1,5 +1,6 @@
 package example.feb.ui.elements
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
 import java.util.UUID
 
@@ -12,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.onClick
@@ -38,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.TextStyle
@@ -74,6 +77,15 @@ fun Sidebar(
 
     var localSearch by remember { mutableStateOf (searchQuery) }
 
+    // focused searchbar
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
+
+    // smooth animation
+    val borderColor by animateColorAsState(
+        targetValue = if (isFocused) colors.whiteColor else colors.dividerColor,
+    )
+
     LaunchedEffect(searchQuery) {
         if (searchQuery != localSearch) localSearch = searchQuery
     }
@@ -107,8 +119,8 @@ fun Sidebar(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
-                        .weight(0.5f)
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                        .weight(1f)
+                        .padding(horizontal = 12.dp),
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp,
                     color = colors.activeTextColor,
@@ -118,6 +130,7 @@ fun Sidebar(
                     text = {
                         Text(
                             text = "Add",
+                            fontSize = 14.sp,
                             color = colors.activeTextColor,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -139,7 +152,7 @@ fun Sidebar(
                         hoveredElevation = 0.dp,
                         focusedElevation = 0.dp
                     ),
-                    modifier = Modifier.padding(8.dp)
+                    modifier = Modifier.padding(4.dp).wrapContentWidth(),
                 )
 
 
@@ -151,10 +164,12 @@ fun Sidebar(
                 .heightIn(min = 48.dp),
                 shape = AppShapes.rounded12,
                 color = colors.sidebarColor,
-                border = BorderStroke(1.dp, colors.dividerColor))
+                border = BorderStroke(1.dp, borderColor))
             {
 
                 BasicTextField(
+                    interactionSource = interactionSource,
+                    cursorBrush = SolidColor(colors.activeTextColor),
                     textStyle = TextStyle(
                         fontSize = 16.sp,
                         color = colors.activeTextColor,
@@ -209,12 +224,6 @@ fun Sidebar(
             }
 
         }
-
-
-        HorizontalDivider(modifier = Modifier
-            .padding(horizontal = 12.dp, vertical = 4.dp),
-            color = colors.dividerColor,
-        )
 
 
         LazyColumn (

@@ -3,6 +3,7 @@ package example.feb.ui.elements
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.FormatListBulleted
 import androidx.compose.material.icons.outlined.Code
@@ -20,6 +21,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,6 +45,7 @@ import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.isUnspecified
 import com.mohamedrejeb.richeditor.ui.BasicRichTextEditor
+import example.feb.domain.text.ContentStats
 
 
 @Composable
@@ -54,9 +57,11 @@ fun MainContent(
     isDarkTheme: Boolean,
     colors: AppColors,
     onToggleTheme: () -> Unit,
+    contentStats: ContentStats,
 ) {
+
     Box(
-        modifier = Modifier.fillMaxSize().padding(4.dp),
+        modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
 
@@ -68,31 +73,41 @@ fun MainContent(
 
         Column(modifier = Modifier.fillMaxSize()) {
 
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            // ── HEADER ───────────────────────────────────────────────────────────────────────────────────────────────
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
 
-            // ── HEADER ───────────────────────────────────────────────────────────────────────────────────────────
+                Surface(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp), shape = AppShapes.rounded12) {
 
-                Text(
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(20.dp),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp,
-                    text = title,
-                    color = colors.blackColor)
+                    Text(
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 8.dp, vertical = 20.dp),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 24.sp,
+                        text = title,
+                        color = colors.blackColor)
 
-                Surface(modifier = Modifier.padding(horizontal = 10.dp), shape = AppShapes.rounded12){
-                    IconButton(onClick = onToggleTheme){
-                        Icon(
-                            imageVector = if (isDarkTheme) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
-                            contentDescription = "toggle theme",
-                            tint = colors.blackColor,
-                            modifier = Modifier.size(36.dp)
-                        )
-                    }
                 }
+
+                // disabled temporarily, more color work needed.
+
+//                Surface(modifier = Modifier.padding(horizontal = 10.dp), shape = AppShapes.rounded12){
+//                    IconButton(onClick = onToggleTheme){
+//                        Icon(
+//                            imageVector = if (isDarkTheme) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
+//                            contentDescription = "toggle theme",
+//                            tint = colors.blackColor,
+//                            modifier = Modifier.size(36.dp)
+//                        )
+//                    }
+//                }
 
             }
 
@@ -102,24 +117,62 @@ fun MainContent(
                 )
 
 
-            // ── TEXT AREA ────────────────────────────────────────────────────────────────────────────────────────────
+            // ── EDITOR AREA ──────────────────────────────────────────────────────────────────────────────────────────
 
             ChapterRichEditor(
+                modifier = Modifier.weight(1f, fill = true).fillMaxWidth(),
                 chapterId = selectedId,
                 storedHtml = content,
                 onHtmlChange = onContentChange,
                 colors = colors,
             )
 
+            // ── STATS AREA ───────────────────────────────────────────────────────────────────────────────────────────
+
+            Surface(modifier = Modifier.fillMaxWidth(), color = colors.extraColor ) {
+                Row(modifier = Modifier
+                        .height(IntrinsicSize.Min)
+                        .wrapContentHeight()
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                    verticalAlignment = Alignment.CenterVertically ) {
+
+                    Text(
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        text = "Characters: " + contentStats.chars.toString(),
+                        fontSize = 12.sp,
+                        color = colors.grayedTextColor,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+
+                    VerticalDivider(color = colors.dividerColor)
+
+                    Text(
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        text = "Words: " + contentStats.words.toString(),
+                        fontSize = 12.sp,
+                        color = colors.grayedTextColor,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+
+
         }
 
     }
 }
 
+
+// will be moved?
 // ── EDITOR ───────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun ChapterRichEditor(
+    modifier: Modifier = Modifier,
     chapterId: UUID,
     storedHtml: String,
     onHtmlChange: (UUID, String) -> Unit,
@@ -157,14 +210,11 @@ private fun ChapterRichEditor(
                 }
         }
 
-        val toolbarScroll = rememberScrollState()
-
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column (modifier = modifier) {
 
             EditorToolbar(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .horizontalScroll(toolbarScroll)
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 state = richTextState,
                 colors = colors,
@@ -173,7 +223,7 @@ private fun ChapterRichEditor(
 
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .weight(1f)
                     .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
                 BasicRichTextEditor(

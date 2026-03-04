@@ -1,6 +1,7 @@
 package example.feb.presentation
 
 import example.feb.domain.model.Chapter
+import example.feb.domain.text.ContentStats
 import java.util.UUID
 
 
@@ -39,7 +40,10 @@ data class AppUiState(
     val draftHtml: String = "",
     val isDraftDirty: Boolean = false,
 
-){
+    // STATS
+    val contentStats: ContentStats = ContentStats.Empty,
+
+    ){
 
     // ─── DERIVED ─────────────────────────────────────────────────────────────────────────────
 
@@ -67,7 +71,6 @@ data class AppUiState(
             val id = selectedId ?: return ""
             return if (draftChapterId == id) draftHtml else selected?.content.orEmpty()
         }
-
 
     val chapterRows: List<ChapterRowUi>
         get() = filteredChapters.map { ChapterRowUi(it.id, it.title) }

@@ -1,5 +1,7 @@
 package example.feb.presentation
 
+import example.feb.domain.text.ContentStats
+import example.feb.domain.text.computeContentStats
 import example.feb.domain.usecase.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,7 +31,7 @@ class AppViewModel(
     private val renameChapter:      RenameChapterUseCase,
     private val deleteChapter:      DeleteChapterUseCase,
     private val saveChapterContent: SaveChapterContentUseCase,
-    dispatcher: CoroutineDispatcher = Dispatchers.Default // not UI
+    dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
@@ -41,23 +43,26 @@ class AppViewModel(
 
     // ── Command Queue ────────────────────────────────────────────────────────────────────────────────────────────────
 
-    private val commands = Channel<Command>(capacity = Channel.UNLIMITED)
+    private val commands = Channel<Command>(capacity = Channel.UNLIMITED) // UNLIMITED FOR TESTING ONLY
 
     private sealed interface Command {
-        data object Load                                                : Command
-        data object AddChapter                                          : Command
-        data class  SelectChapter   (val id: UUID)                      : Command
-        data class  StartRenaming   (val id: UUID)                      : Command
-        data class  RenameCommit    (val id: UUID, val title: String)   : Command
-        data class  DeleteChapter   (val id: UUID)                      : Command
-        data class  ContentChanged  (val id: UUID, val html: String)    : Command
-        data class  CommitDraft     (val id: UUID)                      : Command
-        data object Esc                                                 : Command
-        data object ToggleTheme                                         : Command
+        data object Load                                                        : Command
+        data object AddChapter                                                  : Command
+        data class  SelectChapter   (val id: UUID)                              : Command
+        data class  StartRenaming   (val id: UUID)                              : Command
+        data class  RenameCommit    (val id: UUID, val title: String)           : Command
+        data class  DeleteChapter   (val id: UUID)                              : Command
+        data class  ContentChanged  (val id: UUID, val html: String)            : Command
+        data class  CommitDraft     (val id: UUID)                              : Command
+        data object Esc                                                         : Command
+        data object ToggleTheme                                                 : Command
 
         // search
-        data class  SearchQueryChanged (val query: String)              : Command
-        data object ClearSearch                                         : Command
+        data class  SearchQueryChanged (val query: String)                      : Command
+        data object ClearSearch                                                 : Command
+
+        // stats
+        data class StatsComputed    (val html: String, val stats: ContentStats) : Command
     }
 
     private suspend fun commandLoop() {
@@ -75,6 +80,7 @@ class AppViewModel(
                 is Command.ToggleTheme          -> handleToggleTheme()
                 is Command.SearchQueryChanged   -> handleSearchQueryChanged(cmd.query)
                 is Command.ClearSearch          -> handleClearSearch()
+                is Command.StatsComputed        -> handleStatsComputed(cmd.html, cmd.stats)
             }
         }
     }
@@ -118,24 +124,26 @@ class AppViewModel(
 
         loadChapters()
 
-            .onSuccess { loaded ->
-                val selected = _uiState.value.selectedId
-                    ?.takeIf { id -> loaded.any { it.id == id } }
-                    ?: loaded.firstOrNull()?.id
+                .onSuccess { loaded ->
 
-                _uiState.update {
-                    it.copy(
-                        isLoading      = false,
-                        chapters       = loaded,
-                        selectedId     = selected,
-                        editingState   = EditingState.None,
-                        errorMessage   = null,
-                        draftChapterId = null,
-                        draftHtml      = "",
-                        isDraftDirty   = false,
-                    )
+                    val selectedChapter = _uiState.value.selectedId
+                        ?.let { id -> loaded.firstOrNull { it.id == id } }
+                        ?: loaded.firstOrNull()
+
+                    _uiState.update {
+                        it.copy(
+                            isLoading      = false,
+                            chapters       = loaded,
+                            selectedId     = selectedChapter?.id,
+                            editingState   = EditingState.None,
+                            errorMessage   = null,
+                            draftChapterId = null,
+                            draftHtml      = "",
+                            isDraftDirty   = false,
+                            contentStats   = computeContentStats(selectedChapter?.content.orEmpty())
+                        )
+                    }
                 }
-            }
 
             .onFailure { e ->
                 _uiState.update {
@@ -173,7 +181,8 @@ class AppViewModel(
 
         val state = _uiState.value
         if (state.selectedId == id) return
-        if (state.chapters.none { it.id == id }) return
+
+        val chapter = state.chapters.firstOrNull { it.id == id } ?: return
 
         flushDraft()
 
@@ -184,6 +193,7 @@ class AppViewModel(
                 draftChapterId = null,
                 draftHtml      = "",
                 isDraftDirty   = false,
+                contentStats   = computeContentStats(chapter.content),
             )
         }
     }
@@ -250,9 +260,14 @@ class AppViewModel(
         if (_uiState.value.selectedId != id) return
 
         _uiState.update {
-            it.copy(draftChapterId = id, draftHtml = html, isDraftDirty = true)
+            it.copy(
+                draftChapterId  = id,
+                draftHtml       = html,
+                isDraftDirty    = true,
+            )
         }
         scheduleDebouncedCommit(id)
+        scheduleDebouncedStatsUpdate(html)
     }
 
     private suspend fun handleCommitDraft(id: UUID) {
@@ -291,6 +306,12 @@ class AppViewModel(
         _uiState.update { it.copy(searchQuery = "") }
     }
 
+    private suspend fun handleStatsComputed(html: String, stats: ContentStats) {
+        val state = _uiState.value
+        if (state.draftHtml != html) return
+        _uiState.update { it.copy(contentStats = stats) }
+    }
+
 
     // ── DRAFT HELPERS ────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -320,7 +341,7 @@ class AppViewModel(
         persistJob = null
     }
 
-    // ── DEBOUNCE  ────────────────────────────────────────────────────────────────────────────────────────────────────
+    // ── DEBOUNCERS  ──────────────────────────────────────────────────────────────────────────────────────────────────
 
     private val persistDebounceMs = 1_000L
     private var persistJob: Job? = null
@@ -330,6 +351,18 @@ class AppViewModel(
         persistJob = scope.launch {
             delay(persistDebounceMs)
             dispatch(Command.CommitDraft(id))
+        }
+    }
+
+    private val statsDebounceMs = 300L
+    private var statsJob: Job? = null
+
+    private fun scheduleDebouncedStatsUpdate(html: String) {
+        statsJob?.cancel()
+        statsJob = scope.launch {
+            delay(statsDebounceMs)
+            val stats = computeContentStats(html)
+            dispatch(Command.StatsComputed(html, stats))
         }
     }
 
