@@ -46,16 +46,20 @@ class AppViewModel(
     private val commands = Channel<Command>(capacity = Channel.UNLIMITED) // UNLIMITED FOR TESTING ONLY
 
     private sealed interface Command {
+
+        // load / add / delete / select
         data object Load                                                        : Command
         data object AddChapter                                                  : Command
+        data class  DeleteChapter   (val id: UUID)                              : Command
         data class  SelectChapter   (val id: UUID)                              : Command
+
+        // rename
         data class  StartRenaming   (val id: UUID)                              : Command
         data class  RenameCommit    (val id: UUID, val title: String)           : Command
-        data class  DeleteChapter   (val id: UUID)                              : Command
+
+        // content
         data class  ContentChanged  (val id: UUID, val html: String)            : Command
         data class  CommitDraft     (val id: UUID)                              : Command
-        data object Esc                                                         : Command
-        data object ToggleTheme                                                 : Command
 
         // search
         data class  SearchQueryChanged (val query: String)                      : Command
@@ -63,6 +67,11 @@ class AppViewModel(
 
         // stats
         data class StatsComputed    (val html: String, val stats: ContentStats) : Command
+
+        // misc
+        data object Esc                                                         : Command
+        data object ToggleTheme                                                 : Command
+
     }
 
     private suspend fun commandLoop() {
@@ -70,17 +79,17 @@ class AppViewModel(
             when (cmd) {
                 is Command.Load                 -> handleLoad()
                 is Command.AddChapter           -> handleAddChapter()
+                is Command.DeleteChapter        -> handleDelete(cmd.id)
                 is Command.SelectChapter        -> handleSelect(cmd.id)
                 is Command.StartRenaming        -> handleStartRenaming(cmd.id)
                 is Command.RenameCommit         -> handleRenameCommit(cmd.id, cmd.title)
-                is Command.DeleteChapter        -> handleDelete(cmd.id)
                 is Command.ContentChanged       -> handleContentChanged(cmd.id, cmd.html)
                 is Command.CommitDraft          -> handleCommitDraft(cmd.id)
-                is Command.Esc                  -> handleEsc()
-                is Command.ToggleTheme          -> handleToggleTheme()
                 is Command.SearchQueryChanged   -> handleSearchQueryChanged(cmd.query)
                 is Command.ClearSearch          -> handleClearSearch()
                 is Command.StatsComputed        -> handleStatsComputed(cmd.html, cmd.stats)
+                is Command.Esc                  -> handleEsc()
+                is Command.ToggleTheme          -> handleToggleTheme()
             }
         }
     }
@@ -91,7 +100,6 @@ class AppViewModel(
 
     // ── PUBLIC API ───────────────────────────────────────────────────────────────────────────────────────────────────
 
-    // Discrete Commands
     fun onAddChapter()                              = dispatch(Command.AddChapter)
     fun onSelectChapter(id: UUID)                   = dispatch(Command.SelectChapter(id))
     fun onStartRenaming(id: UUID)                   = dispatch(Command.StartRenaming(id))
@@ -253,6 +261,7 @@ class AppViewModel(
         deleteChapter(id)
             .onFailure { e ->
                 _uiState.update { it.copy(errorMessage = "Delete failed..?: ${e.message}") }
+                handleLoad()
             }
     }
 
@@ -339,6 +348,9 @@ class AppViewModel(
     private fun cancelDraft() {
         persistJob?.cancel()
         persistJob = null
+
+        statsJob?.cancel()
+        statsJob = null
     }
 
     // ── DEBOUNCERS  ──────────────────────────────────────────────────────────────────────────────────────────────────
