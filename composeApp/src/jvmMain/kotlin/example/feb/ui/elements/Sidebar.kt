@@ -97,7 +97,6 @@ fun Sidebar(
             .collect { q -> onSearchQueryChange(q) }
     }
 
-
     Column(
         modifier = Modifier
             .then(modifier)
@@ -152,7 +151,9 @@ fun Sidebar(
                         hoveredElevation = 0.dp,
                         focusedElevation = 0.dp
                     ),
-                    modifier = Modifier.padding(4.dp).wrapContentWidth(),
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .height(48.dp)
                 )
 
 
@@ -207,7 +208,7 @@ fun Sidebar(
                                             modifier = Modifier
                                                 .size(16.dp)
                                                 .pointerHoverIcon(PointerIcon.Default),
-                                            onClick = {localSearch = ""},
+                                            onClick = {onClearSearch()},
                                         ){
                                             Icon(
                                                 imageVector = Icons.Filled.Close,

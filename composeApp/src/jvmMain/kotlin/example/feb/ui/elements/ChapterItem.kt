@@ -70,6 +70,7 @@ fun ChapterItem(
         tonalElevation = if (isSelected) 3.dp else 0.dp,
         modifier = Modifier
             .fillMaxWidth()
+            .height(48.dp)
             .clip(AppShapes.rounded12)
             .clickable(enabled = !isEditing) { onSelect() },
     ) {

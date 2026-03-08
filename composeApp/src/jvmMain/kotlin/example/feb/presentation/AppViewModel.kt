@@ -52,6 +52,7 @@ class AppViewModel(
         data object AddChapter                                                  : Command
         data class  DeleteChapter   (val id: UUID)                              : Command
         data class  SelectChapter   (val id: UUID)                              : Command
+        data object CloseChapter                                                : Command
 
         // rename
         data class  StartRenaming   (val id: UUID)                              : Command
@@ -90,6 +91,7 @@ class AppViewModel(
                 is Command.StatsComputed        -> handleStatsComputed(cmd.html, cmd.stats)
                 is Command.Esc                  -> handleEsc()
                 is Command.ToggleTheme          -> handleToggleTheme()
+                is Command.CloseChapter         -> handleCloseChapter()
             }
         }
     }
@@ -111,6 +113,7 @@ class AppViewModel(
     fun onToggleTheme()                             = dispatch(Command.ToggleTheme)
     fun onSearchQueryChanged(query: String)         = dispatch(Command.SearchQueryChanged(query))
     fun onClearSearch()                             = dispatch(Command.ClearSearch)
+    fun onCloseChapter()                            = dispatch(Command.CloseChapter)
 
     // ── INIT / DISPOSE ───────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -313,6 +316,10 @@ class AppViewModel(
 
     private suspend fun handleClearSearch() {
         _uiState.update { it.copy(searchQuery = "") }
+    }
+
+    private suspend fun handleCloseChapter() {
+        _uiState.update { it.copy(selectedId = null) }
     }
 
     private suspend fun handleStatsComputed(html: String, stats: ContentStats) {

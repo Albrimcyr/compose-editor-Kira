@@ -142,6 +142,7 @@ fun App(viewModel: AppViewModel) {
                         isDarkTheme = uiState.isDarkTheme,
                         onToggleTheme = viewModel::onToggleTheme,
                         contentStats = uiState.contentStats,
+                        onCloseChapter = viewModel::onCloseChapter,
                     )
                 }
             }

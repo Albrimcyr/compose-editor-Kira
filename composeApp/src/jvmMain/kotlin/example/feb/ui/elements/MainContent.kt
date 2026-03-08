@@ -3,9 +3,11 @@ package example.feb.ui.elements
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.FormatListBulleted
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.FormatBold
@@ -43,9 +45,11 @@ import java.util.UUID
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.isUnspecified
 import com.mohamedrejeb.richeditor.ui.BasicRichTextEditor
 import example.feb.domain.text.ContentStats
+import org.jetbrains.skia.Surface
 
 
 @Composable
@@ -58,10 +62,12 @@ fun MainContent(
     colors: AppColors,
     onToggleTheme: () -> Unit,
     contentStats: ContentStats,
+    onCloseChapter: () -> Unit,
 ) {
 
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
 
@@ -70,357 +76,123 @@ fun MainContent(
             return@Box
         }
 
+        Surface(color = colors.grayedTextColor) {
 
-        Column(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier
+                .fillMaxSize()
+                .padding(6.dp),
+            )
 
-            // ── HEADER ───────────────────────────────────────────────────────────────────────────────────────────────
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            {
 
-                Surface(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp), shape = AppShapes.rounded12) {
+                // ── HEADER ────────────────d───────────────────────────────────────────────────────────────────────────────
 
-                    Text(
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 8.dp, vertical = 20.dp),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 24.sp,
-                        text = title,
-                        color = colors.blackColor)
+                Surface(modifier = Modifier
+                            .height(64.dp),
+                        color = colors.sidebarColor)
+                {
+
+                    Row(
+                        modifier = Modifier,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(horizontal = 12.dp),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                Text(
+                                    text = title,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 24.sp,
+                                    color = colors.activeTextColor
+                                )
+                            }
+
+                        Surface(modifier = Modifier,
+                                shape = AppShapes.rounded12,
+                                color = colors.sidebarColor
+                        ) {
+                            IconButton(onClick = onCloseChapter){
+                                Icon(
+                                    imageVector = Icons.Outlined.Close,
+                                    contentDescription = "close chapter",
+                                    tint = colors.whiteColor,
+                                    modifier = Modifier.size(36.dp)
+                                )
+                            }
+                        }
+                    }
+                        // disabled temporarily, more color work needed.
+
+    //                Surface(modifier = Modifier.padding(horizontal = 10.dp), shape = AppShapes.rounded12){
+    //                    IconButton(onClick = onToggleTheme){
+    //                        Icon(
+    //                            imageVector = if (isDarkTheme) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
+    //                            contentDescription = "toggle theme",
+    //                            tint = colors.blackColor,
+    //                            modifier = Modifier.size(36.dp)
+    //                        )
+    //                    }
+    //                }
 
                 }
 
-                // disabled temporarily, more color work needed.
 
-//                Surface(modifier = Modifier.padding(horizontal = 10.dp), shape = AppShapes.rounded12){
-//                    IconButton(onClick = onToggleTheme){
-//                        Icon(
-//                            imageVector = if (isDarkTheme) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
-//                            contentDescription = "toggle theme",
-//                            tint = colors.blackColor,
-//                            modifier = Modifier.size(36.dp)
-//                        )
-//                    }
-//                }
+                // ── EDITOR AREA ──────────────────────────────────────────────────────────────────────────────────────────
 
-            }
-
-            HorizontalDivider(modifier = Modifier
-                .padding(horizontal = 12.dp, vertical = 4.dp),
-                color = colors.dividerColor,
+                Surface(
+                    modifier = Modifier.weight(1f, fill = true).fillMaxWidth(),
                 )
+                {
+                    ChapterRichEditor(
+                        chapterId = selectedId,
+                        storedHtml = content,
+                        onHtmlChange = onContentChange,
+                        colors = colors,
+                    )
+                }
 
+                // ── STATS AREA ───────────────────────────────────────────────────────────────────────────────────────────
 
-            // ── EDITOR AREA ──────────────────────────────────────────────────────────────────────────────────────────
-
-            ChapterRichEditor(
-                modifier = Modifier.weight(1f, fill = true).fillMaxWidth(),
-                chapterId = selectedId,
-                storedHtml = content,
-                onHtmlChange = onContentChange,
-                colors = colors,
-            )
-
-            // ── STATS AREA ───────────────────────────────────────────────────────────────────────────────────────────
-
-            Surface(modifier = Modifier.fillMaxWidth(), color = colors.extraColor ) {
-                Row(modifier = Modifier
+                Surface(modifier = Modifier.fillMaxWidth(), color = colors.extraColor ) {
+                    Row(modifier = Modifier
                         .height(IntrinsicSize.Min)
                         .wrapContentHeight()
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(20.dp),
-                    verticalAlignment = Alignment.CenterVertically ) {
+                        horizontalArrangement = Arrangement.spacedBy(20.dp),
+                        verticalAlignment = Alignment.CenterVertically ) {
 
-                    Text(
-                        modifier = Modifier.weight(1f),
-                        maxLines = 1,
-                        text = "Characters: " + contentStats.chars.toString(),
-                        fontSize = 12.sp,
-                        color = colors.grayedTextColor,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                        Text(
+                            modifier = Modifier.weight(1f),
+                            maxLines = 1,
+                            text = "Characters: " + contentStats.chars.toString(),
+                            fontSize = 12.sp,
+                            color = colors.grayedTextColor,
+                            overflow = TextOverflow.Ellipsis,
+                        )
 
-                    VerticalDivider(color = colors.dividerColor)
+                        VerticalDivider(color = colors.dividerColor)
 
-                    Text(
-                        modifier = Modifier.weight(1f),
-                        maxLines = 1,
-                        text = "Words: " + contentStats.words.toString(),
-                        fontSize = 12.sp,
-                        color = colors.grayedTextColor,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-
-
-        }
-
-    }
-}
-
-
-// will be moved?
-// ── EDITOR ───────────────────────────────────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun ChapterRichEditor(
-    modifier: Modifier = Modifier,
-    chapterId: UUID,
-    storedHtml: String,
-    onHtmlChange: (UUID, String) -> Unit,
-    colors: AppColors,
-) {
-    key(chapterId) {
-
-        val richTextState = rememberRichTextState()
-        val editorFocusRequester = remember { FocusRequester() }
-
-        var loadedHtmlCache by remember { mutableStateOf("") }
-        var isExternalUpdate by remember { mutableStateOf(false) }
-
-        LaunchedEffect(storedHtml) {
-            if (storedHtml != loadedHtmlCache) {
-                isExternalUpdate = true
-                richTextState.setHtml(storedHtml)
-                loadedHtmlCache = richTextState.toHtml()
-            }
-        }
-
-        LaunchedEffect(Unit) {
-            snapshotFlow { richTextState.annotatedString }
-                .distinctUntilChanged()
-                .collectLatest {
-                    if (isExternalUpdate) {
-                        isExternalUpdate = false
-                        return@collectLatest
-                    }
-                    val html = richTextState.toHtml()
-                    if (html != loadedHtmlCache) {
-                        loadedHtmlCache = html
-                        onHtmlChange(chapterId, html)
+                        Text(
+                            modifier = Modifier.weight(1f),
+                            maxLines = 1,
+                            text = "Words: " + contentStats.words.toString(),
+                            fontSize = 12.sp,
+                            color = colors.grayedTextColor,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                     }
                 }
-        }
 
-        Column (modifier = modifier) {
 
-            EditorToolbar(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                state = richTextState,
-                colors = colors,
-                editorFocusRequester = editorFocusRequester
-            )
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
-            ) {
-                BasicRichTextEditor(
-                    state = richTextState,
-                    modifier = Modifier.fillMaxSize().focusRequester(editorFocusRequester),
-                )
             }
 
         }
-    }
-}
-
-
-// ── EDITOR TOOLBAR ───────────────────────────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun EditorToolbar(
-    modifier: Modifier,
-    state: RichTextState,
-    colors: AppColors,
-    editorFocusRequester: FocusRequester,
-) {
-
-    val spanStyle = state.currentSpanStyle
-
-    val isBold          = spanStyle.fontWeight == FontWeight.Bold
-    val isItalic        = spanStyle.fontStyle == FontStyle.Italic
-    val isUnderline     = spanStyle.textDecoration?.contains(TextDecoration.Underline) == true
-    val isStrike        = spanStyle.textDecoration?.contains(TextDecoration.LineThrough) == true
-    val isCode          = state.isCodeSpan
-    val isOrderedList   = state.isOrderedList
-    val isUnorderedList = state.isUnorderedList
-
-    val baseFontSize = 16.sp
-    val step         = 2f
-    val min          = 10f
-    val max          = 100f
-
-    fun currentFontSizeSp(): Float {
-        val fs = state.currentSpanStyle.fontSize
-        return if (fs.isUnspecified) baseFontSize.value else fs.value
-    }
-
-    fun applyFontSize(sp: Float) {
-        val current = currentFontSizeSp()
-        val target = sp.coerceIn(min, max)
-
-        if (target == current) return // no reset on min/max size.
-
-        state.toggleSpanStyle(SpanStyle(fontSize = target.sp))
-    }
-
-
-    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-
-        ToolbarIconButton(
-            icon = Icons.Outlined.TextDecrease,
-            contentDescription = "decrease font size",
-            colors = colors,
-            onClick = {
-                applyFontSize(currentFontSizeSp() - step) }
-        )
-
-        ToolbarIconButton(
-            icon = Icons.Outlined.TextIncrease,
-            contentDescription = "increase font size",
-            colors = colors,
-            onClick = {
-                applyFontSize(currentFontSizeSp() + step) }
-        )
-
-        ToolbarToggleButton(
-            icon = Icons.Outlined.FormatBold,
-            contentDescription = "bold",
-            isActive = isBold,
-            colors = colors,
-            onClick = { state.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold))
-                        editorFocusRequester.requestFocus() }
-        )
-
-        ToolbarToggleButton(
-            icon = Icons.Outlined.FormatItalic,
-            contentDescription = "italic",
-            isActive = isItalic,
-            colors = colors,
-            onClick = { state.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic))
-                        editorFocusRequester.requestFocus() }
-        )
-
-        ToolbarToggleButton(
-            icon = Icons.Outlined.FormatUnderlined,
-            contentDescription = "underline",
-            isActive = isUnderline,
-            colors = colors,
-            onClick = { safeClick(editorFocusRequester) {
-                        state.toggleSpanStyle(SpanStyle(textDecoration = TextDecoration.Underline))} }
-        )
-
-        ToolbarToggleButton(
-            icon = Icons.Outlined.FormatStrikethrough,
-            contentDescription = "strikethrough",
-            isActive = isStrike,
-            colors = colors,
-            onClick = { safeClick(editorFocusRequester) {
-                        state.toggleSpanStyle(SpanStyle(textDecoration = TextDecoration.LineThrough))} }
-        )
-
-        ToolbarToggleButton(
-            icon = Icons.Outlined.Code,
-            contentDescription = "code or similar",
-            isActive = isCode,
-            colors = colors,
-            onClick = { state.toggleCodeSpan()
-                        editorFocusRequester.requestFocus() }
-        )
-
-        ToolbarToggleButton(
-            icon = Icons.AutoMirrored.Outlined.FormatListBulleted,
-            contentDescription = "Bulleted list",
-            isActive = isUnorderedList,
-            colors = colors,
-            onClick = { state.toggleUnorderedList()
-                        editorFocusRequester.requestFocus() }
-        )
-
-        ToolbarToggleButton(
-            icon = Icons.Outlined.FormatListNumbered,
-            contentDescription = "Numbered list",
-            isActive = isOrderedList,
-            colors = colors,
-            onClick = { state.toggleOrderedList()
-                        editorFocusRequester.requestFocus() }
-        )
 
     }
-}
-
-// ── BUTTONS ──────────────────────────────────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun ToolbarToggleButton(
-    icon: ImageVector,
-    contentDescription: String,
-    isActive: Boolean,
-    colors: AppColors,
-    onClick: () -> Unit,
-) {
-    Surface(
-        shape = AppShapes.rounded6,
-        color = if (isActive) colors.toggledColor else colors.sidebarColor,
-        modifier = Modifier.size(28.dp)
-    ) {
-        IconButton(
-            modifier = Modifier.focusProperties { canFocus = false },
-            onClick = onClick)
-        {
-            Icon(
-                imageVector = icon,
-                modifier = Modifier.size(16.dp),
-                contentDescription = contentDescription,
-                tint = colors.activeTextColor,
-            )
-        }
-    }
-}
-
-
-@Composable
-private fun ToolbarIconButton(
-    icon: ImageVector,
-    contentDescription: String,
-    colors: AppColors,
-    onClick: () -> Unit,
-) {
-    Surface(
-        shape = AppShapes.rounded6,
-        color = colors.sidebarColor,
-        modifier = Modifier.size(28.dp)
-    ) {
-        IconButton(
-            onClick = onClick,
-            modifier = Modifier.focusProperties { canFocus = false })
-        {
-            Icon(
-                imageVector = icon,
-                modifier = Modifier.size(16.dp),
-                contentDescription = contentDescription,
-                tint = colors.activeTextColor,
-            )
-        }
-    }
-}
-
-private inline fun safeClick(
-    focusRequester: FocusRequester,
-    action: () -> Unit
-) {
-    try { action() } catch (_: Throwable) { }
-    focusRequester.requestFocus()
 }
