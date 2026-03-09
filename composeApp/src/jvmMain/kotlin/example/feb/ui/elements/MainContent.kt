@@ -1,25 +1,12 @@
 package example.feb.ui.elements
 
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.FormatListBulleted
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Code
-import androidx.compose.material.icons.outlined.DarkMode
-import androidx.compose.material.icons.outlined.FormatBold
-import androidx.compose.material.icons.outlined.FormatItalic
-import androidx.compose.material.icons.outlined.FormatListNumbered
-import androidx.compose.material.icons.outlined.FormatStrikethrough
-import androidx.compose.material.icons.outlined.FormatUnderlined
-import androidx.compose.material.icons.outlined.LightMode
-import androidx.compose.material.icons.outlined.TextDecrease
-import androidx.compose.material.icons.outlined.TextIncrease
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material.icons.outlined.VerticalAlignBottom
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -27,29 +14,14 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mohamedrejeb.richeditor.model.RichTextState
-import com.mohamedrejeb.richeditor.model.rememberRichTextState
 import example.feb.ui.AppColors
 import example.feb.ui.AppShapes
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChanged
 import java.util.UUID
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusProperties
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.isUnspecified
-import com.mohamedrejeb.richeditor.ui.BasicRichTextEditor
 import example.feb.domain.text.ContentStats
-import org.jetbrains.skia.Surface
 
 
 @Composable
@@ -58,17 +30,22 @@ fun MainContent(
     title: String,
     content: String, // normalized HTML
     onContentChange: (UUID, String) -> Unit,
-    isDarkTheme: Boolean,
     colors: AppColors,
-    onToggleTheme: () -> Unit,
     contentStats: ContentStats,
     onCloseChapter: () -> Unit,
+
+    isDarkTheme: Boolean,
+    onToggleTheme: () -> Unit,
+
+    isToolbarVisible: Boolean,
+    onToggleToolbar: () -> Unit,
+
 ) {
 
     Box(
         modifier = Modifier
             .fillMaxSize(),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
 
         if (selectedId == null) {
@@ -89,8 +66,14 @@ fun MainContent(
 
                 Surface(modifier = Modifier
                             .height(64.dp),
-                        color = colors.sidebarColor)
-                {
+                        color = colors.sidebarColor,
+                        shape = RoundedCornerShape(
+                            topStart = 8.dp,
+                            topEnd = 8.dp,
+                            bottomStart = 0.dp,
+                            bottomEnd = 0.dp
+                        )
+                ) {
 
                     Row(
                         modifier = Modifier,
@@ -111,6 +94,22 @@ fun MainContent(
                                     color = colors.activeTextColor
                                 )
                             }
+
+                        if (!isToolbarVisible) {
+                            Surface(modifier = Modifier,
+                                    shape = AppShapes.rounded12,
+                                    color = colors.sidebarColor
+                            ) {
+                                IconButton(onClick = onToggleToolbar) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.VerticalAlignBottom,
+                                        contentDescription = "show toolbar",
+                                        tint = colors.whiteColor,
+                                        modifier = Modifier.size(36.dp)
+                                    )
+                                }
+                            }
+                        }
 
                         Surface(modifier = Modifier,
                                 shape = AppShapes.rounded12,
@@ -152,13 +151,23 @@ fun MainContent(
                         chapterId = selectedId,
                         storedHtml = content,
                         onHtmlChange = onContentChange,
+                        isToolbarVisible = isToolbarVisible,
                         colors = colors,
+                        onToggleToolbar = onToggleToolbar,
                     )
                 }
 
                 // ── STATS AREA ───────────────────────────────────────────────────────────────────────────────────────────
 
-                Surface(modifier = Modifier.fillMaxWidth(), color = colors.extraColor ) {
+                Surface(modifier = Modifier
+                            .fillMaxWidth(),
+                        color = colors.sidebarColor,
+                        shape = RoundedCornerShape(
+                            topStart = 0.dp,
+                            topEnd = 0.dp,
+                            bottomStart = 8.dp,
+                            bottomEnd = 8.dp)
+                ) {
                     Row(modifier = Modifier
                         .height(IntrinsicSize.Min)
                         .wrapContentHeight()

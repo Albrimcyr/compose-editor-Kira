@@ -174,7 +174,6 @@ fun Sidebar(
                     textStyle = TextStyle(
                         fontSize = 16.sp,
                         color = colors.activeTextColor,
-                        fontStyle = FontStyle.Italic,
                     ),
                     value = localSearch,
                     onValueChange = {localSearch = it},

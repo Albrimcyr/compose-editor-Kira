@@ -1,6 +1,9 @@
 # Kotlin Multiplatform Desktop — Architecture Demo
 
 ## Overview
+
+![UI](composeApp/docs/ui.png)
+
 This is a Kotlin Multiplatform (KMP) desktop application built with Compose Multiplatform.
 
 The purpose of this project is to demonstrate architecture rather than feature complexity.
@@ -15,9 +18,7 @@ The application is a chapter-based note editor supporting:
 - Edit and save content (with debouncing)
 - HTML content normalization
 - Persistent storage (JSON files, atomic writes)
-
-
-![UI](composeApp/docs/ui.png)
+- Search chapter(s)
 
 ---
 
@@ -40,11 +41,11 @@ The project is intentionally structured to be scalable and testable.
 
 ## CI
 
-A basic GitHub Actions pipeline is included to verify that the project builds.
+GitHub Actions pipeline is included to verify that the project builds.
 
 ## Tests
 
-Basic JUnit tests are included for domain UseCases.
+JUnit tests are included for domain UseCases.
 
 ---
 

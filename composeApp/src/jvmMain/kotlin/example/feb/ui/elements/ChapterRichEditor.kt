@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,6 +19,7 @@ import androidx.compose.material.icons.outlined.FormatStrikethrough
 import androidx.compose.material.icons.outlined.FormatUnderlined
 import androidx.compose.material.icons.outlined.TextDecrease
 import androidx.compose.material.icons.outlined.TextIncrease
+import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -58,6 +60,9 @@ fun ChapterRichEditor(
     storedHtml: String,
     onHtmlChange: (UUID, String) -> Unit,
     colors: AppColors,
+
+    isToolbarVisible: Boolean,
+    onToggleToolbar: () -> Unit
 ) {
     key(chapterId) {
 
@@ -93,15 +98,20 @@ fun ChapterRichEditor(
 
         Column (modifier = modifier) {
 
-            Surface(color = colors.toolbarColor) {
-                EditorToolbar(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    state = richTextState,
-                    colors = colors,
-                    editorFocusRequester = editorFocusRequester
-                )
+            if (isToolbarVisible) {
+                Surface(color = colors.toolbarColor) {
+
+                    EditorToolbar(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        state = richTextState,
+                        colors = colors,
+                        editorFocusRequester = editorFocusRequester,
+                        onToggleToolbar = onToggleToolbar
+                    )
+
+                }
             }
 
             Box(
@@ -128,6 +138,7 @@ private fun EditorToolbar(
     state: RichTextState,
     colors: AppColors,
     editorFocusRequester: FocusRequester,
+    onToggleToolbar: () -> Unit
 ) {
 
     val spanStyle = state.currentSpanStyle
@@ -241,6 +252,15 @@ private fun EditorToolbar(
                 editorFocusRequester.requestFocus() }
         )
 
+        Spacer(modifier = Modifier.weight(1f))
+
+        ToolbarActionButton(
+            icon = Icons.Outlined.Visibility,
+            contentDescription = "Visibility",
+            colors = colors,
+            onClick = { onToggleToolbar() }
+        )
+
     }
 }
 
@@ -295,6 +315,32 @@ private fun ToolbarIconButton(
                 modifier = Modifier.size(16.dp),
                 contentDescription = contentDescription,
                 tint = colors.activeTextColor,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ToolbarActionButton(
+    icon: ImageVector,
+    contentDescription: String,
+    colors: AppColors,
+    onClick: () -> Unit,
+) {
+    Surface(
+        shape = AppShapes.rounded6,
+        color = colors.toolbarColor,
+        modifier = Modifier.size(28.dp)
+    ) {
+        IconButton(
+            onClick = onClick,
+            modifier = Modifier.focusProperties { canFocus = false })
+        {
+            Icon(
+                imageVector = icon,
+                modifier = Modifier.size(24.dp),
+                contentDescription = contentDescription,
+                tint = colors.grayedTextColor,
             )
         }
     }

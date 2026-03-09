@@ -1,12 +1,17 @@
 package example.feb.ui.elements
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
@@ -23,6 +28,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
@@ -73,6 +79,9 @@ fun ChapterItem(
             .height(48.dp)
             .clip(AppShapes.rounded12)
             .clickable(enabled = !isEditing) { onSelect() },
+        border = if (isEditing) {
+            BorderStroke(1.dp, colors.whiteColor)
+        } else null
     ) {
 
         Row(
@@ -93,16 +102,16 @@ fun ChapterItem(
 
                 var isFocused by remember(id, isEditing) { mutableStateOf(false) }
 
-                OutlinedTextField(
+                BasicTextField(
                     value = localText,
                     onValueChange = { localText = it },
                     singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = colors.activeTextColor,
-                        unfocusedTextColor = colors.grayedTextColor
+                    cursorBrush = SolidColor(colors.activeTextColor),
+                    textStyle = LocalTextStyle.current.copy(
+                        color = colors.activeTextColor
                     ),
-                    shape = AppShapes.rounded12,
                     modifier = Modifier
+                        .padding(horizontal = 12.dp)
                         .weight(1f)
                         .focusRequester(focusRequester)
                         .onFocusChanged { state ->
@@ -114,7 +123,7 @@ fun ChapterItem(
                             }
                         }
 
-                        .onPreviewKeyEvent() {
+                        .onPreviewKeyEvent {
                             if (it.key == Key.Enter) {
                                 onRenameCommit(id, localText)
                                 true
@@ -138,7 +147,7 @@ fun ChapterItem(
                     modifier = Modifier,
                 ){
                     IconButton(
-                        shape = AppShapes.rounded12,
+                        shape = AppShapes.rounded6,
                         onClick = {menuExpanded = true},
                     ){
                         Icon(

@@ -47,31 +47,24 @@ class AppViewModel(
 
     private sealed interface Command {
 
-        // load / add / delete / select
+        // load / add / delete
         data object Load                                                        : Command
         data object AddChapter                                                  : Command
         data class  DeleteChapter   (val id: UUID)                              : Command
+
+        // select and close
         data class  SelectChapter   (val id: UUID)                              : Command
         data object CloseChapter                                                : Command
 
         // rename
-        data class  StartRenaming   (val id: UUID)                              : Command
         data class  RenameCommit    (val id: UUID, val title: String)           : Command
 
         // content
         data class  ContentChanged  (val id: UUID, val html: String)            : Command
         data class  CommitDraft     (val id: UUID)                              : Command
 
-        // search
-        data class  SearchQueryChanged (val query: String)                      : Command
-        data object ClearSearch                                                 : Command
-
         // stats
         data class StatsComputed    (val html: String, val stats: ContentStats) : Command
-
-        // misc
-        data object Esc                                                         : Command
-        data object ToggleTheme                                                 : Command
 
     }
 
@@ -82,15 +75,10 @@ class AppViewModel(
                 is Command.AddChapter           -> handleAddChapter()
                 is Command.DeleteChapter        -> handleDelete(cmd.id)
                 is Command.SelectChapter        -> handleSelect(cmd.id)
-                is Command.StartRenaming        -> handleStartRenaming(cmd.id)
                 is Command.RenameCommit         -> handleRenameCommit(cmd.id, cmd.title)
                 is Command.ContentChanged       -> handleContentChanged(cmd.id, cmd.html)
                 is Command.CommitDraft          -> handleCommitDraft(cmd.id)
-                is Command.SearchQueryChanged   -> handleSearchQueryChanged(cmd.query)
-                is Command.ClearSearch          -> handleClearSearch()
                 is Command.StatsComputed        -> handleStatsComputed(cmd.html, cmd.stats)
-                is Command.Esc                  -> handleEsc()
-                is Command.ToggleTheme          -> handleToggleTheme()
                 is Command.CloseChapter         -> handleCloseChapter()
             }
         }
@@ -102,18 +90,22 @@ class AppViewModel(
 
     // ── PUBLIC API ───────────────────────────────────────────────────────────────────────────────────────────────────
 
+    // Serious queued workflow actions. Command Loop.
     fun onAddChapter()                              = dispatch(Command.AddChapter)
     fun onSelectChapter(id: UUID)                   = dispatch(Command.SelectChapter(id))
-    fun onStartRenaming(id: UUID)                   = dispatch(Command.StartRenaming(id))
     fun onRenameCommit(id: UUID, title: String)     = dispatch(Command.RenameCommit(id, title))
     fun onContentChange(id: UUID, html: String)     = dispatch(Command.ContentChanged(id, html))
     fun onDeleteChapter(id: UUID)                   = dispatch(Command.DeleteChapter(id))
-    fun onEsc()                                     = dispatch(Command.Esc)
     fun onDel() { uiState.value.selectedId?.let {     dispatch(Command.DeleteChapter(it)) } }
-    fun onToggleTheme()                             = dispatch(Command.ToggleTheme)
-    fun onSearchQueryChanged(query: String)         = dispatch(Command.SearchQueryChanged(query))
-    fun onClearSearch()                             = dispatch(Command.ClearSearch)
     fun onCloseChapter()                            = dispatch(Command.CloseChapter)
+
+    // Simple UI actions (reducer)
+    fun onStartRenaming(id: UUID)                   = reduceStartRenaming(id)
+    fun onEsc()                                     = reduceCancelEditing()
+    fun onToggleTheme()                             = reduceToggleTheme()
+    fun onSearchQueryChanged(query: String)         = reduceSearchQueryChanged(query)
+    fun onClearSearch()                             = reduceClearSearch()
+    fun onToggleToolbar()                           = reduceToggleToolbar()
 
     // ── INIT / DISPOSE ───────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -126,6 +118,28 @@ class AppViewModel(
         commands.close()
         scope.cancel()
     }
+
+    // ── Direct Reducers ──────────────────────────────────────────────────────────────────────────────────────────────
+
+    private fun reduceStartRenaming(id: UUID) {
+        if (_uiState.value.chapters.none { it.id == id }) return
+        _uiState.update { it.copy(editingState = EditingState.Renaming(id)) }
+    }
+
+    private fun reduceCancelEditing() =
+        _uiState.update { it.copy(editingState = EditingState.None) }
+
+    private fun reduceToggleTheme() =
+        _uiState.update { it.copy(isDarkTheme = !it.isDarkTheme) }
+
+    private fun reduceSearchQueryChanged(query: String) =
+        _uiState.update { it.copy(searchQuery = query) }
+
+    private fun reduceClearSearch() =
+        _uiState.update { it.copy(searchQuery = "") }
+
+    private fun reduceToggleToolbar() =
+        _uiState.update { it.copy(isToolbarVisible = !it.isToolbarVisible) }
 
     // ── LOAD ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -164,7 +178,7 @@ class AppViewModel(
     }
 
 
-    // ── HANDLERS ─────────────────────────────────────────────────────────────────────────────────────────────────────
+    // ── COMMAND HANDLERS ─────────────────────────────────────────────────────────────────────────────────────────────
 
     private suspend fun handleAddChapter() {
         flushDraft()
@@ -207,11 +221,6 @@ class AppViewModel(
                 contentStats   = computeContentStats(chapter.content),
             )
         }
-    }
-
-    private suspend fun handleStartRenaming(id: UUID) {
-        if (_uiState.value.chapters.none { it.id == id }) return
-        _uiState.update { it.copy(editingState = EditingState.Renaming(id)) }
     }
 
 
@@ -301,25 +310,19 @@ class AppViewModel(
     }
 
 
-    private suspend fun handleEsc() {
-        _uiState.update { it.copy(editingState = EditingState.None) }
-    }
-
-    private suspend fun handleToggleTheme() {
-        _uiState.update { it.copy(isDarkTheme = !it.isDarkTheme) }
-
-    }
-
-    private suspend fun handleSearchQueryChanged(query: String) {
-        _uiState.update { it.copy(searchQuery = query) }
-    }
-
-    private suspend fun handleClearSearch() {
-        _uiState.update { it.copy(searchQuery = "") }
-    }
-
     private suspend fun handleCloseChapter() {
-        _uiState.update { it.copy(selectedId = null) }
+        flushDraft()
+
+        _uiState.update {
+            it.copy(
+                selectedId = null,
+                editingState = EditingState.None,
+                draftChapterId = null,
+                draftHtml = "",
+                isDraftDirty = false,
+                contentStats = ContentStats.Empty,
+            )
+        }
     }
 
     private suspend fun handleStatsComputed(html: String, stats: ContentStats) {

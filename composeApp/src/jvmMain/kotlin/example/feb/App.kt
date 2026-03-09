@@ -122,7 +122,7 @@ fun App(viewModel: AppViewModel) {
                             state = dragState,
                         )
                         .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR)))
-                        .background(colors.mainDividerColor)
+                        .background(colors.sidebarColor)
                 )
 
 
@@ -137,12 +137,15 @@ fun App(viewModel: AppViewModel) {
                         title = uiState.selectedTitle,
                         content = uiState.selectedContent,
                         onContentChange = viewModel::onContentChange,
-
-                        colors = colors,
-                        isDarkTheme = uiState.isDarkTheme,
-                        onToggleTheme = viewModel::onToggleTheme,
                         contentStats = uiState.contentStats,
                         onCloseChapter = viewModel::onCloseChapter,
+                        colors = colors,
+
+                        isDarkTheme = uiState.isDarkTheme,
+                        onToggleTheme = viewModel::onToggleTheme,
+
+                        isToolbarVisible = uiState.isToolbarVisible,
+                        onToggleToolbar = viewModel::onToggleToolbar,
                     )
                 }
             }
