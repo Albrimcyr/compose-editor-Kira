@@ -3,7 +3,7 @@ package example.feb.domain.usecase
 import example.feb.domain.model.Chapter
 import example.feb.testdoubles.SpyChapterRepository
 import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import java.util.UUID
 
@@ -19,9 +19,9 @@ class RenameChapterUseCaseTest {
 
         val result = sut(id = id, rawTitle = "  testTitle  ", currentChapters = listOf(chapter))
 
-        assertTrue(result is RenameResult.Success)
-        assertEquals(chapter, (result as RenameResult.Success).updated)
-        assertEquals(0, repo.upsertCalls)
+        Assertions.assertTrue(result is RenameResult.Success)
+        Assertions.assertEquals(chapter, (result as RenameResult.Success).updated)
+        Assertions.assertEquals(0, repo.upsertCalls)
     }
 
 }

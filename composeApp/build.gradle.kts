@@ -29,13 +29,12 @@ kotlin {
             // Random Basic Editor
             implementation("com.mohamedrejeb.richeditor:richeditor-compose:1.0.0-rc13")
 
-            // Tests (JUnit, Coroutines)
-            implementation(kotlin("test"))
-            implementation("org.junit.jupiter:junit-jupiter:5.10.2")
-            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(kotlin("test"))
+            implementation("org.junit.jupiter:junit-jupiter:5.10.2")
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
         }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
@@ -51,9 +50,13 @@ compose.desktop {
         mainClass = "example.feb.MainKt"
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            targetFormats(TargetFormat.Exe, TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "forMari"
             packageVersion = "1.0.0"
         }
     }
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
 }

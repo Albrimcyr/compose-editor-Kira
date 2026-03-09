@@ -3,7 +3,7 @@ package example.feb.domain.usecase
 import example.feb.domain.model.Chapter
 import example.feb.testdoubles.SpyChapterRepository
 import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import java.util.UUID
 
@@ -21,9 +21,9 @@ class SaveChapterContentUseCaseTest {
 
         val result = sut(id = id, html = "Hello", currentChapters = listOf(chapter))
 
-        assertTrue(result.isSuccess)
-        assertEquals(chapter, result.getOrNull())
-        assertEquals(0, repo.upsertCalls) // !!
+        Assertions.assertTrue(result.isSuccess)
+        Assertions.assertEquals(chapter, result.getOrNull())
+        Assertions.assertEquals(0, repo.upsertCalls) // !!
     }
 
 }

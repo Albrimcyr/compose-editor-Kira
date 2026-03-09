@@ -3,7 +3,7 @@ package example.feb.domain.usecase
 import example.feb.domain.model.Chapter
 import example.feb.testdoubles.SpyChapterRepository
 import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import java.util.UUID
 
@@ -19,9 +19,9 @@ class DeleteChapterUseCaseTest {
 
         val result = sut(id)
 
-        assertTrue      (result.isSuccess)                                                 // successful delete
-        assertEquals    (1, repo.deleteCalls)                           // one call
-        assertNull      (repo.get(id))                                                     // no ID found
+        Assertions.assertTrue(result.isSuccess)                                                 // successful delete
+        Assertions.assertEquals(1, repo.deleteCalls)                           // one call
+        Assertions.assertNull(repo.get(id))                                                     // no ID found
     }
 
     // ── DEMO BASIC TEST ──────────────────────────────────────────────────────────────────────────────────────────────
@@ -34,8 +34,8 @@ class DeleteChapterUseCaseTest {
 
         val result = sut(id)
 
-        assertTrue      (result.isFailure)
-        assertEquals    ("Error!", result.exceptionOrNull()?.message)
-        assertEquals    (1, repo.deleteCalls)
+        Assertions.assertTrue(result.isFailure)
+        Assertions.assertEquals("Error!", result.exceptionOrNull()?.message)
+        Assertions.assertEquals(1, repo.deleteCalls)
     }
 }
