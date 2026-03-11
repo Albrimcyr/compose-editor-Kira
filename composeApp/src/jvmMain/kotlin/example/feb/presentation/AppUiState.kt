@@ -39,9 +39,10 @@ data class AppUiState(
     val isDarkTheme: Boolean = true,
     val isToolbarVisible: Boolean = true,
 
-    // DRAFT
+    // EDITOR
+    val editorFontSizeSp: Int = 16,
     val draftChapterId: UUID? = null,
-    val draftHtml: String = "",
+    val draftMarkdown: String = "",
     val isDraftDirty: Boolean = false,
 
     // STATS
@@ -71,7 +72,7 @@ data class AppUiState(
     val selectedContent: String
         get() {
             val id = selectedId ?: return ""
-            return if (draftChapterId == id) draftHtml else selected?.content.orEmpty()
+            return if (draftChapterId == id) draftMarkdown else selected?.content.orEmpty()
         }
 
     val chapterRows: List<ChapterRowUi>

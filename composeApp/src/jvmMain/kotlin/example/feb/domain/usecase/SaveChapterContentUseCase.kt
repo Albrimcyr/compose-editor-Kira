@@ -9,7 +9,7 @@ class SaveChapterContentUseCase(
 ) {
     suspend operator fun invoke(
         id: UUID,
-        html: String,
+        markdown: String,
         currentChapters: List<Chapter>,
     ): Result<Chapter> {
 
@@ -17,9 +17,9 @@ class SaveChapterContentUseCase(
             ?: return Result.failure(NoSuchElementException("Chapter $id not found"))
 
         // Small optimization :)
-        if (current.content == html) return Result.success(current)
+        if (current.content == markdown) return Result.success(current)
 
-        val updated = current.copy(content = html)
+        val updated = current.copy(content = markdown)
         return runCatching { repository.upsert(updated) }
             .map { updated }
     }

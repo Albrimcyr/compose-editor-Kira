@@ -3,23 +3,24 @@ package example.feb.ui.elements
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.FormatListBulleted
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.FormatBold
 import androidx.compose.material.icons.outlined.FormatItalic
 import androidx.compose.material.icons.outlined.FormatListNumbered
+import androidx.compose.material.icons.outlined.FormatQuote
 import androidx.compose.material.icons.outlined.FormatStrikethrough
 import androidx.compose.material.icons.outlined.FormatUnderlined
+import androidx.compose.material.icons.outlined.Highlight
 import androidx.compose.material.icons.outlined.TextDecrease
 import androidx.compose.material.icons.outlined.TextIncrease
 import androidx.compose.material.icons.outlined.Visibility
@@ -28,33 +29,25 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.isUnspecified
 import androidx.compose.ui.unit.sp
-import com.mohamedrejeb.richeditor.model.RichTextState
-import com.mohamedrejeb.richeditor.model.rememberRichTextState
-import com.mohamedrejeb.richeditor.ui.BasicRichTextEditor
+import com.denser.hyphen.model.MarkupStyle
+import com.denser.hyphen.state.HyphenTextState
+import com.denser.hyphen.state.rememberHyphenTextState
+import com.denser.hyphen.ui.HyphenBasicTextEditor
+import com.denser.hyphen.ui.HyphenStyleConfig
 import example.feb.ui.AppColors
 import example.feb.ui.AppShapes
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChanged
 import java.util.UUID
 
 // ── EDITOR ───────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -62,71 +55,61 @@ import java.util.UUID
 fun ChapterRichEditor(
     modifier: Modifier = Modifier,
     chapterId: UUID,
-    storedHtml: String,
-    onHtmlChange: (UUID, String) -> Unit,
+    storedMarkdown: String,
+    onMarkdownChange: (UUID, String) -> Unit,
+    onPlainTextChange: (String) -> Unit,
     colors: AppColors,
 
     isToolbarVisible: Boolean,
-    onToggleToolbar: () -> Unit
-) {
-    key(chapterId) {
+    onToggleToolbar: () -> Unit,
 
-        val richTextState = rememberRichTextState()
+    uiFontSize: Int,
+    onIncreaseEditorFont: () -> Unit,
+    onDecreaseEditorFont: () -> Unit,
+) {
+
+    key(chapterId) {
+        val state = rememberHyphenTextState(initialText = storedMarkdown)
         val editorFocusRequester = remember { FocusRequester() }
 
-        var loadedHtmlCache by remember { mutableStateOf("") }
-        var isExternalUpdate by remember { mutableStateOf(false) }
-
-        LaunchedEffect(storedHtml) {
-            if (storedHtml != loadedHtmlCache) {
-                isExternalUpdate = true
-                richTextState.setHtml(storedHtml)
-                loadedHtmlCache = richTextState.toHtml()
-            }
-        }
-
-        LaunchedEffect(Unit) {
-            snapshotFlow { richTextState.annotatedString }
-                .distinctUntilChanged()
-                .collectLatest {
-                    if (isExternalUpdate) {
-                        isExternalUpdate = false
-                        return@collectLatest
-                    }
-                    val html = richTextState.toHtml()
-                    if (html != loadedHtmlCache) {
-                        loadedHtmlCache = html
-                        onHtmlChange(chapterId, html)
-                    }
-                }
-        }
-
-        Column (modifier = modifier) {
+        Column(modifier = modifier) {
 
             if (isToolbarVisible) {
                 Surface(color = colors.toolbarColor) {
-
                     EditorToolbar(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 12.dp, vertical = 8.dp),
-                        state = richTextState,
+                        state = state,
                         colors = colors,
                         editorFocusRequester = editorFocusRequester,
-                        onToggleToolbar = onToggleToolbar
-                    )
+                        onToggleToolbar = onToggleToolbar,
 
+                        uiFontSize = uiFontSize,
+                        onIncreaseEditorFont = onIncreaseEditorFont,
+                        onDecreaseEditorFont = onDecreaseEditorFont,
+                    )
                 }
             }
 
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
             ) {
-                BasicRichTextEditor(
-                    state = richTextState,
-                    modifier = Modifier.fillMaxSize().focusRequester(editorFocusRequester),
+                HyphenBasicTextEditor(
+                    state = state,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .focusRequester(editorFocusRequester),
+                    textStyle = TextStyle(
+                        fontSize = uiFontSize.sp,
+                        color = colors.blackColor,
+                    ),
+                    cursorBrush = SolidColor(colors.blackColor),
+                    styleConfig = HyphenStyleConfig(),
+                    onTextChange = onPlainTextChange,
+                    onMarkdownChange = { markdown -> onMarkdownChange(chapterId, markdown) },
                 )
             }
 
@@ -140,43 +123,19 @@ fun ChapterRichEditor(
 @Composable
 private fun EditorToolbar(
     modifier: Modifier,
-    state: RichTextState,
+    state: HyphenTextState,
     colors: AppColors,
     editorFocusRequester: FocusRequester,
-    onToggleToolbar: () -> Unit
+    onToggleToolbar: () -> Unit,
+    uiFontSize: Int,
+    onIncreaseEditorFont: () -> Unit,
+    onDecreaseEditorFont: () -> Unit,
 ) {
-
-    val spanStyle = state.currentSpanStyle
-
-    val isBold          = spanStyle.fontWeight == FontWeight.Bold
-    val isItalic        = spanStyle.fontStyle == FontStyle.Italic
-    val isUnderline     = spanStyle.textDecoration?.contains(TextDecoration.Underline) == true
-    val isStrike        = spanStyle.textDecoration?.contains(TextDecoration.LineThrough) == true
-    val isCode          = state.isCodeSpan
-    val isOrderedList   = state.isOrderedList
-    val isUnorderedList = state.isUnorderedList
-
-    val baseFontSize = 16.sp
-    val step         = 2f
-    val min          = 10f
-    val max          = 100f
-
-    fun currentFontSizeSp(): Float {
-        val fs = state.currentSpanStyle.fontSize
-        return if (fs.isUnspecified) baseFontSize.value else fs.value
-    }
-
-    fun applyFontSize(sp: Float) {
-        val current = currentFontSizeSp()
-        val target = sp.coerceIn(min, max)
-
-        if (target == current) return // no reset on min/max size.
-
-        state.toggleSpanStyle(SpanStyle(fontSize = target.sp))
-    }
-
-
-    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+    Row(
+        modifier = modifier.heightIn(min = 32.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
 
         Surface(
             color = colors.whiteColor,
@@ -188,24 +147,23 @@ private fun EditorToolbar(
 
                 ToolbarIconButton(
                     icon = Icons.Outlined.TextDecrease,
-                    contentDescription = "decrease font size",
+                    contentDescription = "decrease editor font size",
                     colors = colors,
-                    onClick = { applyFontSize(currentFontSizeSp() - step) }
+                    onClick = onDecreaseEditorFont,
                 )
 
                 Box(modifier = Modifier.width(30.dp), contentAlignment = Alignment.Center) {
                     Text(
-                        text = currentFontSizeSp().toInt().toString(),
+                        text = uiFontSize.toString(),
                         color = colors.blackColor
                     )
                 }
 
-
                 ToolbarIconButton(
                     icon = Icons.Outlined.TextIncrease,
-                    contentDescription = "increase font size",
+                    contentDescription = "increase editor font size",
                     colors = colors,
-                    onClick = { applyFontSize(currentFontSizeSp() + step) }
+                    onClick = onIncreaseEditorFont,
                 )
             }
         }
@@ -213,75 +171,83 @@ private fun EditorToolbar(
         ToolbarToggleButton(
             icon = Icons.Outlined.FormatBold,
             contentDescription = "bold",
-            isActive = isBold,
+            isActive = state.hasStyle(MarkupStyle.Bold),
             colors = colors,
-            onClick = { state.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold))
-                editorFocusRequester.requestFocus() }
+            onClick = { toggleStyle(state, MarkupStyle.Bold, editorFocusRequester) },
         )
 
         ToolbarToggleButton(
             icon = Icons.Outlined.FormatItalic,
             contentDescription = "italic",
-            isActive = isItalic,
+            isActive = state.hasStyle(MarkupStyle.Italic),
             colors = colors,
-            onClick = { state.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic))
-                editorFocusRequester.requestFocus() }
+            onClick = { toggleStyle(state, MarkupStyle.Italic, editorFocusRequester) },
         )
 
         ToolbarToggleButton(
             icon = Icons.Outlined.FormatUnderlined,
             contentDescription = "underline",
-            isActive = isUnderline,
+            isActive = state.hasStyle(MarkupStyle.Underline),
             colors = colors,
-            onClick = { safeClick(editorFocusRequester) {
-                state.toggleSpanStyle(SpanStyle(textDecoration = TextDecoration.Underline))} }
+            onClick = { toggleStyle(state, MarkupStyle.Underline, editorFocusRequester) },
         )
 
         ToolbarToggleButton(
             icon = Icons.Outlined.FormatStrikethrough,
             contentDescription = "strikethrough",
-            isActive = isStrike,
+            isActive = state.hasStyle(MarkupStyle.Strikethrough),
             colors = colors,
-            onClick = { safeClick(editorFocusRequester) {
-                state.toggleSpanStyle(SpanStyle(textDecoration = TextDecoration.LineThrough))} }
+            onClick = { toggleStyle(state, MarkupStyle.Strikethrough, editorFocusRequester) },
         )
 
         ToolbarToggleButton(
             icon = Icons.Outlined.Code,
-            contentDescription = "code or similar",
-            isActive = isCode,
+            contentDescription = "inline code",
+            isActive = state.hasStyle(MarkupStyle.InlineCode),
             colors = colors,
-            onClick = { state.toggleCodeSpan()
-                editorFocusRequester.requestFocus() }
+            onClick = { toggleStyle(state, MarkupStyle.InlineCode, editorFocusRequester) },
         )
 
         ToolbarToggleButton(
             icon = Icons.AutoMirrored.Outlined.FormatListBulleted,
-            contentDescription = "Bulleted list",
-            isActive = isUnorderedList,
+            contentDescription = "bulleted list",
+            isActive = state.hasStyle(MarkupStyle.BulletList),
             colors = colors,
-            onClick = { state.toggleUnorderedList()
-                editorFocusRequester.requestFocus() }
+            onClick = { toggleStyle(state, MarkupStyle.BulletList, editorFocusRequester) },
         )
 
         ToolbarToggleButton(
             icon = Icons.Outlined.FormatListNumbered,
-            contentDescription = "Numbered list",
-            isActive = isOrderedList,
+            contentDescription = "numbered list",
+            isActive = state.hasStyle(MarkupStyle.OrderedList),
             colors = colors,
-            onClick = { state.toggleOrderedList()
-                editorFocusRequester.requestFocus() }
+            onClick = { toggleStyle(state, MarkupStyle.OrderedList, editorFocusRequester) },
+        )
+
+        ToolbarToggleButton(
+            icon = Icons.Outlined.Highlight,
+            contentDescription = "highlight",
+            isActive = state.hasStyle(MarkupStyle.Highlight),
+            colors = colors,
+            onClick = { toggleStyle(state, MarkupStyle.Highlight, editorFocusRequester) },
+        )
+
+        ToolbarToggleButton(
+            icon = Icons.Outlined.FormatQuote,
+            contentDescription = "blockquote",
+            isActive = state.hasStyle(MarkupStyle.Blockquote),
+            colors = colors,
+            onClick = { toggleStyle(state, MarkupStyle.Blockquote, editorFocusRequester) },
         )
 
         Spacer(modifier = Modifier.weight(1f))
 
         ToolbarActionButton(
             icon = Icons.Outlined.Visibility,
-            contentDescription = "Visibility",
+            contentDescription = "hide toolbar",
             colors = colors,
-            onClick = { onToggleToolbar() }
+            onClick = onToggleToolbar,
         )
-
     }
 }
 
@@ -298,12 +264,12 @@ private fun ToolbarToggleButton(
     Surface(
         shape = AppShapes.rounded6,
         color = if (isActive) colors.toggledColor else colors.sidebarColor,
-        modifier = Modifier.size(28.dp)
+        modifier = Modifier.size(28.dp),
     ) {
         IconButton(
             modifier = Modifier.focusProperties { canFocus = false },
-            onClick = onClick)
-        {
+            onClick = onClick,
+        ) {
             Icon(
                 imageVector = icon,
                 modifier = Modifier.size(16.dp),
@@ -313,7 +279,6 @@ private fun ToolbarToggleButton(
         }
     }
 }
-
 
 @Composable
 private fun ToolbarIconButton(
@@ -341,6 +306,7 @@ private fun ToolbarIconButton(
     }
 }
 
+
 @Composable
 private fun ToolbarActionButton(
     icon: ImageVector,
@@ -351,12 +317,12 @@ private fun ToolbarActionButton(
     Surface(
         shape = AppShapes.rounded6,
         color = colors.toolbarColor,
-        modifier = Modifier.size(28.dp)
+        modifier = Modifier.size(28.dp),
     ) {
         IconButton(
             onClick = onClick,
-            modifier = Modifier.focusProperties { canFocus = false })
-        {
+            modifier = Modifier.focusProperties { canFocus = false },
+        ) {
             Icon(
                 imageVector = icon,
                 modifier = Modifier.size(24.dp),
@@ -367,10 +333,11 @@ private fun ToolbarActionButton(
     }
 }
 
-private inline fun safeClick(
-    focusRequester: FocusRequester,
-    action: () -> Unit
+private fun toggleStyle(
+    state: HyphenTextState,
+    style: MarkupStyle,
+    editorFocusRequester: FocusRequester,
 ) {
-    try { action() } catch (_: Throwable) { }
-    focusRequester.requestFocus()
+    state.toggleStyle(style)
+    editorFocusRequester.requestFocus()
 }

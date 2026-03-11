@@ -111,6 +111,7 @@ fun Sidebar(
 
             Row (
                 verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.heightIn(min = 58.dp)
             )
 
             {
@@ -119,91 +120,62 @@ fun Sidebar(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
                         .weight(1f)
-                        .padding(horizontal = 12.dp),
+                        .padding(start = 12.dp, top = 17.dp, end = 12.dp, bottom = 7.dp),
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp,
                     color = colors.activeTextColor,
                     text = "Chapters")
-
-                ExtendedFloatingActionButton(
-                    text = {
-                        Text(
-                            text = "Add",
-                            fontSize = 14.sp,
-                            color = colors.activeTextColor,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    },
-                    shape = AppShapes.rounded12,
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Filled.Add,
-                            contentDescription = "Add",
-                            tint = colors.activeTextColor
-                        )
-                    },
-                    onClick = onAddChapter,
-                    containerColor = colors.selectionColor,
-                    elevation = FloatingActionButtonDefaults.elevation(
-                        defaultElevation = 0.dp,
-                        pressedElevation = 0.dp,
-                        hoveredElevation = 0.dp,
-                        focusedElevation = 0.dp
-                    ),
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .height(48.dp)
-                )
-
-
             }
 
-            Surface (Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-                .heightIn(min = 48.dp),
-                shape = AppShapes.rounded12,
-                color = colors.sidebarColor,
-                border = BorderStroke(1.dp, borderColor))
-            {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
 
-                BasicTextField(
-                    interactionSource = interactionSource,
-                    cursorBrush = SolidColor(colors.activeTextColor),
-                    textStyle = TextStyle(
-                        fontSize = 16.sp,
-                        color = colors.activeTextColor,
-                    ),
-                    value = localSearch,
-                    onValueChange = {localSearch = it},
-                    singleLine = true,
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    decorationBox = { innerTextField ->
-                        Row (modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically) {
 
-                                Icon(
-                                    imageVector = Icons.Filled.Search,
-                                    contentDescription = "Search",
-                                    tint = colors.activeTextColor,
-                                    modifier = Modifier.size(16.dp)
-                                )
+                // ── FIRST ELEMENT  ───────────────────────────────────────────────────────────────────────────────────
 
-                                Spacer(Modifier.width(10.dp))
+                Surface (Modifier
+                    .weight(1f)
+                    .padding(8.dp)
+                    .heightIn(min = 48.dp),
+                    shape = AppShapes.rounded12,
+                    color = colors.sidebarColor,
+                    border = BorderStroke(1.dp, borderColor))
+                {
 
-                                Box(
-                                    modifier = Modifier.weight(1f),
-                                    contentAlignment = Alignment.CenterStart) {
-                                    innerTextField()
-                                }
+                        BasicTextField(
+                            interactionSource = interactionSource,
+                            cursorBrush = SolidColor(colors.activeTextColor),
+                            textStyle = TextStyle(
+                                fontSize = 16.sp,
+                                color = colors.activeTextColor,
+                            ),
+                            value = localSearch,
+                            onValueChange = {localSearch = it},
+                            singleLine = true,
+                            modifier = Modifier,
+                            decorationBox = { innerTextField ->
+                                Row (modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically) {
 
-                                if (localSearch.isNotEmpty()) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Search,
+                                        contentDescription = "Search",
+                                        tint = colors.activeTextColor,
+                                        modifier = Modifier.size(16.dp)
+                                    )
 
-                                    IconButton(
+                                    Spacer(Modifier.width(10.dp))
+
+                                    Box(
+                                        modifier = Modifier.weight(1f),
+                                        contentAlignment = Alignment.CenterStart) {
+                                        innerTextField()
+                                    }
+
+                                    if (localSearch.isNotEmpty()) {
+
+                                        IconButton(
                                             modifier = Modifier
                                                 .size(16.dp)
                                                 .pointerHoverIcon(PointerIcon.Default),
@@ -215,11 +187,36 @@ fun Sidebar(
                                                 tint = colors.activeTextColor,
                                             )
                                         }
-                                }
+                                    }
 
-                        }
-                    },
-                )
+                                }
+                            },
+                        )
+                    }
+
+                // ── SECOND ELEMENT  ──────────────────────────────────────────────────────────────────────────────────
+
+                Surface(
+                    modifier = Modifier.padding(start = 0.dp, top = 8.dp, end = 8.dp, bottom = 8.dp )
+                                       .heightIn(min = 48.dp)
+                                       .widthIn(min = 48.dp),
+                    color = colors.sidebarColor,
+                    border = BorderStroke(1.dp, colors.dividerColor),
+                    shape = AppShapes.rounded12,
+
+                ) {
+
+                    IconButton(
+                        modifier = Modifier.size(32.dp),
+                        onClick = {onAddChapter()}) {
+
+                        Icon(imageVector = Icons.Filled.Add,
+                            contentDescription = "Add Chapter",
+                            tint = colors.activeTextColor)
+
+                    }
+
+                }
 
             }
 

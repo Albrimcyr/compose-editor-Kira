@@ -167,10 +167,6 @@ fun ChapterItem(
 
                 }
             }
-
-    }
-
-
-
+        }
     }
 }

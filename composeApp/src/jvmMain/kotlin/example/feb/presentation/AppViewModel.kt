@@ -2,6 +2,7 @@ package example.feb.presentation
 
 import example.feb.domain.text.ContentStats
 import example.feb.domain.text.computeContentStats
+import example.feb.domain.text.computeContentStatsFromPlainText
 import example.feb.domain.usecase.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,10 +14,9 @@ import kotlinx.coroutines.channels.Channel
 import java.util.UUID
 
 
-/** MVVM + UDF ViewModel
+/** MVVM + UDF-like ViewModel (hybrid)
 
    * -- one source of truth (single [AppUiState])
-   * -- unidirectional data flow: UI emits intentions!
    * -- sequential command processing!
    * -- frequent content updates stay in-memory!
    * -- testability: isolated UseCases!
@@ -43,28 +43,18 @@ class AppViewModel(
 
     // ── Command Queue ────────────────────────────────────────────────────────────────────────────────────────────────
 
-    private val commands = Channel<Command>(capacity = Channel.UNLIMITED) // UNLIMITED FOR TESTING ONLY
+    private val commands = Channel<Command>(capacity = Channel.BUFFERED)
 
     private sealed interface Command {
 
-        // load / add / delete
+        // Serious commands
         data object Load                                                        : Command
         data object AddChapter                                                  : Command
         data class  DeleteChapter   (val id: UUID)                              : Command
-
-        // select and close
         data class  SelectChapter   (val id: UUID)                              : Command
         data object CloseChapter                                                : Command
-
-        // rename
         data class  RenameCommit    (val id: UUID, val title: String)           : Command
-
-        // content
-        data class  ContentChanged  (val id: UUID, val html: String)            : Command
-        data class  CommitDraft     (val id: UUID)                              : Command
-
-        // stats
-        data class StatsComputed    (val html: String, val stats: ContentStats) : Command
+        data class  SaveDraft       (val id: UUID, val revision: Long)          : Command
 
     }
 
@@ -76,9 +66,7 @@ class AppViewModel(
                 is Command.DeleteChapter        -> handleDelete(cmd.id)
                 is Command.SelectChapter        -> handleSelect(cmd.id)
                 is Command.RenameCommit         -> handleRenameCommit(cmd.id, cmd.title)
-                is Command.ContentChanged       -> handleContentChanged(cmd.id, cmd.html)
-                is Command.CommitDraft          -> handleCommitDraft(cmd.id)
-                is Command.StatsComputed        -> handleStatsComputed(cmd.html, cmd.stats)
+                is Command.SaveDraft            -> handleSaveDraft(cmd.id, cmd.revision)
                 is Command.CloseChapter         -> handleCloseChapter()
             }
         }
@@ -94,7 +82,6 @@ class AppViewModel(
     fun onAddChapter()                              = dispatch(Command.AddChapter)
     fun onSelectChapter(id: UUID)                   = dispatch(Command.SelectChapter(id))
     fun onRenameCommit(id: UUID, title: String)     = dispatch(Command.RenameCommit(id, title))
-    fun onContentChange(id: UUID, html: String)     = dispatch(Command.ContentChanged(id, html))
     fun onDeleteChapter(id: UUID)                   = dispatch(Command.DeleteChapter(id))
     fun onDel() { uiState.value.selectedId?.let {     dispatch(Command.DeleteChapter(it)) } }
     fun onCloseChapter()                            = dispatch(Command.CloseChapter)
@@ -106,6 +93,10 @@ class AppViewModel(
     fun onSearchQueryChanged(query: String)         = reduceSearchQueryChanged(query)
     fun onClearSearch()                             = reduceClearSearch()
     fun onToggleToolbar()                           = reduceToggleToolbar()
+    fun onIncreaseEditorFont()                      = reduceIncreaseEditorFont()
+    fun onDecreaseEditorFont()                      = reduceDecreaseEditorFont()
+    fun onContentChange(id: UUID, markdown: String) = reduceEditorInput(id, markdown)
+    fun onPlainTextChanged(text: String)            = scheduleDebouncedStatsUpdate(text)
 
     // ── INIT / DISPOSE ───────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -115,11 +106,23 @@ class AppViewModel(
     }
 
     fun dispose() {
+
+        runBlocking {
+            cancelPendingSave()
+            cancelPendingStats()
+            persistDraftIfNeeded()
+        }
+
         commands.close()
         scope.cancel()
     }
 
     // ── Direct Reducers ──────────────────────────────────────────────────────────────────────────────────────────────
+
+    private val minFont = 12
+    private val maxFont = 40
+    private val editorFontStep = 2
+    private var draftRevision: Long = 0L // helper, local // might be moved
 
     private fun reduceStartRenaming(id: UUID) {
         if (_uiState.value.chapters.none { it.id == id }) return
@@ -141,9 +144,42 @@ class AppViewModel(
     private fun reduceToggleToolbar() =
         _uiState.update { it.copy(isToolbarVisible = !it.isToolbarVisible) }
 
+    private fun reduceIncreaseEditorFont() {
+        _uiState.update { state -> state.copy (editorFontSizeSp = (state.editorFontSizeSp + editorFontStep)
+                    .coerceAtMost(maxFont))
+        }
+    }
+
+    private fun reduceDecreaseEditorFont() {
+        _uiState.update { state -> state.copy (editorFontSizeSp = (state.editorFontSizeSp - editorFontStep)
+                    .coerceAtLeast(minFont))
+        }
+    }
+
+    private fun reduceEditorInput(id: UUID, markdown: String) {
+        val state = _uiState.value
+        if (state.selectedId != id) return
+
+        draftRevision += 1
+        val revision = draftRevision
+
+        _uiState.update {
+            it.copy(
+                draftChapterId = id,
+                draftMarkdown = markdown,
+                isDraftDirty = true,
+            )
+        }
+
+        scheduleDebouncedSave(id, revision)
+    }
+
     // ── LOAD ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 
     private suspend fun handleLoad() {
+
+        cancelPendingSave()
+        cancelPendingStats()
 
         _uiState.update { it.copy(isLoading = true, errorMessage = null, editingState = EditingState.None) }
 
@@ -163,7 +199,7 @@ class AppViewModel(
                             editingState   = EditingState.None,
                             errorMessage   = null,
                             draftChapterId = null,
-                            draftHtml      = "",
+                            draftMarkdown  = "",
                             isDraftDirty   = false,
                             contentStats   = computeContentStats(selectedChapter?.content.orEmpty())
                         )
@@ -181,7 +217,9 @@ class AppViewModel(
     // ── COMMAND HANDLERS ─────────────────────────────────────────────────────────────────────────────────────────────
 
     private suspend fun handleAddChapter() {
-        flushDraft()
+
+        persistDraftIfNeeded()
+        cancelPendingStats()
 
         addChapter()
             .onSuccess { chapter ->
@@ -192,8 +230,9 @@ class AppViewModel(
                         editingState   = EditingState.None,
                         errorMessage   = null,
                         draftChapterId = null,
-                        draftHtml      = "",
+                        draftMarkdown  = "",
                         isDraftDirty   = false,
+                        contentStats   = ContentStats.Empty,
                     )
                 }
             }
@@ -209,15 +248,17 @@ class AppViewModel(
 
         val chapter = state.chapters.firstOrNull { it.id == id } ?: return
 
-        flushDraft()
+        persistDraftIfNeeded()
+        cancelPendingStats()
 
         _uiState.update {
             it.copy(
                 selectedId     = id,
                 editingState   = EditingState.None,
                 draftChapterId = null,
-                draftHtml      = "",
+                draftMarkdown  = "",
                 isDraftDirty   = false,
+                errorMessage   = null,
                 contentStats   = computeContentStats(chapter.content),
             )
         }
@@ -231,15 +272,17 @@ class AppViewModel(
 
             is RenameResult.Success -> {
                 _uiState.update { state ->
-                    state.copy(chapters = state.chapters.map {
-                        if (it.id == id) result.updated else it
-                    })
+                    state.copy(
+                        chapters     = state.chapters.map { if (it.id == id) result.updated else it },
+                        errorMessage = null,
+                    )
                 }
             }
 
-            is RenameResult.BlankTitle      -> { }
-            is RenameResult.ChapterNotFound -> { }
-            is RenameResult.Error -> { _uiState.update { it.copy(errorMessage = "Rename failed..?: ${result.cause.message}") }
+            is RenameResult.BlankTitle      -> Unit
+            is RenameResult.ChapterNotFound -> Unit
+            is RenameResult.Error -> { _uiState.update {
+                it.copy(errorMessage = "Rename failed..?: ${result.cause.message}") }
             }
 
         }
@@ -247,145 +290,194 @@ class AppViewModel(
 
     private suspend fun handleDelete(id: UUID) {
         val state = _uiState.value
-        if (state.chapters.none { it.id == id }) return
+
+        // safe
+        val deletedIndex = state.chapters.indexOfFirst { it.id == id }
+        if  (deletedIndex == -1) return
 
         val isDeletingSelected = state.selectedId == id
-        if (isDeletingSelected) cancelDraft() else flushDraft()
 
-        val newChapters = state.chapters.filterNot { it.id == id }
-        val newSelected = if (isDeletingSelected) newChapters.firstOrNull()?.id else state.selectedId
-        val newEditing  = when (val es = state.editingState) {
-            is EditingState.Renaming    -> if (es.id == id) EditingState.None else es
-            EditingState.None           -> EditingState.None
+        if (isDeletingSelected) {
+            cancelPendingSave()
+            cancelPendingStats()
+        } else {
+            persistDraftIfNeeded()
         }
 
+        val newChapters = state.chapters.filterNot { it.id == id }
+
+        // choosing Selected ID (future implementation)
+        val newSelectedId = when {
+            !isDeletingSelected                 -> state.selectedId
+            newChapters.isEmpty()               -> null
+            deletedIndex >= newChapters.size    -> newChapters.last().id
+            else                                -> newChapters[deletedIndex].id
+        }
+
+        // to calculate stats (and maybe something in future)
+        val newSelectedChapter = newSelectedId?.let { selectedId ->
+            newChapters.firstOrNull { it.id == selectedId }
+        }
+
+        val newEditingState = when (val editingState = state.editingState) {
+            is EditingState.Renaming    -> if (editingState.id == id) EditingState.None else editingState
+            is EditingState.None        -> EditingState.None
+        }
+
+        // delete logic with an ability to delete without opening in the future
         _uiState.update {
             it.copy(
                 chapters       = newChapters,
-                selectedId     = newSelected,
-                editingState   = newEditing,
+                selectedId     = newSelectedId,
+                editingState   = newEditingState,
                 draftChapterId = if (isDeletingSelected) null  else it.draftChapterId,
-                draftHtml      = if (isDeletingSelected) ""    else it.draftHtml,
+                draftMarkdown  = if (isDeletingSelected) ""    else it.draftMarkdown,
                 isDraftDirty   = if (isDeletingSelected) false else it.isDraftDirty,
+                contentStats   = if (isDeletingSelected) {
+                    computeContentStats(newSelectedChapter?.content.orEmpty())
+                } else { it.contentStats },
             )
         }
 
         deleteChapter(id)
             .onFailure { e ->
                 _uiState.update { it.copy(errorMessage = "Delete failed..?: ${e.message}") }
-                handleLoad()
+                dispatch(Command.Load)
             }
     }
 
-    private suspend fun handleContentChanged(id: UUID, html: String) {
-        if (_uiState.value.selectedId != id) return
-
-        _uiState.update {
-            it.copy(
-                draftChapterId  = id,
-                draftHtml       = html,
-                isDraftDirty    = true,
-            )
-        }
-        scheduleDebouncedCommit(id)
-        scheduleDebouncedStatsUpdate(html)
-    }
-
-    private suspend fun handleCommitDraft(id: UUID) {
+    private suspend fun handleSaveDraft(id: UUID, revision: Long) {
         val state = _uiState.value
         if (state.draftChapterId != id || !state.isDraftDirty) return
+        if (draftRevision != revision) return // death on obsolete
 
-        saveChapterContent(id, state.draftHtml, state.chapters)
-            .onSuccess { updated ->
-                _uiState.update { s ->
-                    s.copy(
-                        isDraftDirty = false,
-                        chapters     = s.chapters.map { if (it.id == id) updated else it },
-                    )
-                }
-            }
-            .onFailure { e ->
-                _uiState.update { it.copy(errorMessage = "Save failed..?: ${e.message}") }
-            }
+        val markdownSnapshot = state.draftMarkdown // local copy (suspend)
+
+        persistDraftSnapshot(
+            id = id,
+            markdownSnapshot = markdownSnapshot,
+            expectedRevision = revision,
+        )
     }
 
 
     private suspend fun handleCloseChapter() {
-        flushDraft()
+        persistDraftIfNeeded()
+        cancelPendingStats()
 
         _uiState.update {
             it.copy(
-                selectedId = null,
-                editingState = EditingState.None,
-                draftChapterId = null,
-                draftHtml = "",
-                isDraftDirty = false,
-                contentStats = ContentStats.Empty,
+                selectedId      = null,
+                editingState    = EditingState.None,
+                draftChapterId  = null,
+                draftMarkdown   = "",
+                isDraftDirty    = false,
+                errorMessage    = null,
+                contentStats    = ContentStats.Empty,
             )
         }
-    }
-
-    private suspend fun handleStatsComputed(html: String, stats: ContentStats) {
-        val state = _uiState.value
-        if (state.draftHtml != html) return
-        _uiState.update { it.copy(contentStats = stats) }
     }
 
 
     // ── DRAFT HELPERS ────────────────────────────────────────────────────────────────────────────────────────────────
 
-    private suspend fun flushDraft() {
+    private suspend fun persistDraftIfNeeded() {
         val state = _uiState.value
         val id = state.draftChapterId ?: return
         if (!state.isDraftDirty) return
 
-        cancelDraft()
+        cancelPendingSave()
 
-        saveChapterContent(id, state.draftHtml, state.chapters)
-            .onSuccess { updated ->
-                _uiState.update { s ->
-                    s.copy(
-                        isDraftDirty = false,
-                        chapters     = s.chapters.map { if (it.id == id) updated else it },
-                    )
-                }
-            }
-            .onFailure { e ->
-                _uiState.update { it.copy(errorMessage = "Auto-save failed...?: ${e.message}") }
-            }
+        val markdownSnapshot = state.draftMarkdown
+
+        persistDraftSnapshot(
+            id = id,
+            markdownSnapshot = markdownSnapshot,
+            expectedRevision = null,
+        )
+
     }
 
-    private fun cancelDraft() {
-        persistJob?.cancel()
-        persistJob = null
+    private suspend fun persistDraftSnapshot(
+        id: UUID,
+        markdownSnapshot: String,
+        expectedRevision: Long?,
+    ) {
+        saveChapterContent(id, markdownSnapshot, _uiState.value.chapters)
+            .onSuccess { updated ->
+                _uiState.update { current ->
 
-        statsJob?.cancel()
-        statsJob = null
+                    val updatedChapters = current.chapters.map { chapter ->
+                        if (chapter.id == id) updated else chapter
+                    }
+
+                    val sameSnapshotStillCurrent =
+                        current.draftChapterId == id &&
+                                current.draftMarkdown == markdownSnapshot &&
+                                (expectedRevision == null || draftRevision == expectedRevision)
+
+                    if (sameSnapshotStillCurrent) {
+                        current.copy(
+                            chapters        = updatedChapters,
+                            draftChapterId  = null,
+                            draftMarkdown   = "",
+                            isDraftDirty    = false,
+                            errorMessage    = null,
+                        )
+                    } else {
+                        current.copy(
+                            chapters        = updatedChapters,
+                            errorMessage    = null,
+                        )
+                    }
+                }
+            }
+
+            .onFailure { error -> _uiState.update { it.copy(errorMessage = "Save failed: ${error.message}") } }
     }
 
     // ── DEBOUNCERS  ──────────────────────────────────────────────────────────────────────────────────────────────────
 
     private val persistDebounceMs = 1_000L
-    private var persistJob: Job? = null
+    private var saveJob: Job? = null
 
-    private fun scheduleDebouncedCommit(id: UUID) {
-        persistJob?.cancel()
-        persistJob = scope.launch {
+    private fun scheduleDebouncedSave(id: UUID, revision: Long) {
+        saveJob?.cancel()
+        saveJob = scope.launch {
             delay(persistDebounceMs)
-            dispatch(Command.CommitDraft(id))
+            dispatch(Command.SaveDraft(id, revision))
         }
     }
 
     private val statsDebounceMs = 300L
     private var statsJob: Job? = null
 
-    private fun scheduleDebouncedStatsUpdate(html: String) {
+    private fun scheduleDebouncedStatsUpdate(plainText: String) {
+        val selectedId = _uiState.value.selectedId ?: return
+
         statsJob?.cancel()
         statsJob = scope.launch {
             delay(statsDebounceMs)
-            val stats = computeContentStats(html)
-            dispatch(Command.StatsComputed(html, stats))
+            val stats = computeContentStatsFromPlainText(plainText)
+
+            _uiState.update { state ->
+                if (state.selectedId != selectedId) {
+                    state
+                } else {
+                    state.copy(contentStats = stats)
+                }
+            }
         }
+    }
+
+    private fun cancelPendingSave() {
+        saveJob?.cancel()
+        saveJob = null
+    }
+
+    private fun cancelPendingStats() {
+        statsJob?.cancel()
+        statsJob = null
     }
 
 }

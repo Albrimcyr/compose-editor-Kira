@@ -26,8 +26,8 @@ kotlin {
             implementation("org.jetbrains.compose.material:material-icons-core:1.7.3")
             implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
 
-            // Random Basic Editor
-            implementation("com.mohamedrejeb.richeditor:richeditor-compose:1.0.0-rc13")
+            // Markdown editor
+            implementation("io.github.densermeerkat:hyphen:0.1.0-alpha01")
 
         }
         commonTest.dependencies {

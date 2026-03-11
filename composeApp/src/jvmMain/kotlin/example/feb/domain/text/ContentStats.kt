@@ -7,16 +7,39 @@ data class ContentStats(
     companion object { val Empty = ContentStats(0, 0) }
 }
 
-fun computeContentStats(html: String): ContentStats {
+fun computeContentStats(markdown: String): ContentStats {
+    return computeContentStatsFromPlainText(markdownToPlainText(markdown))
+}
 
-    // ── Do not count  ────────────────────────────────────────────────────────────────────────────────────────────────
-    val plain = html
-        .replace(Regex("<[^>]*>"), " ")
-        .replace(Regex("&[a-zA-Z#][a-zA-Z0-9]+;"), " ")
-        .trim()
+fun computeContentStatsFromPlainText(text: String): ContentStats {
+    val normalized = text.trim()
 
-    val chars = plain.replace(Regex("\\s"), "").length                  // no spaces
-    val words = if (plain.isBlank()) 0 else plain.trim().split(Regex("\\s+")).size   // spaces do not matter
+    val chars = normalized
+        .replace(Regex("\\s"), "")
+        .length
 
-    return ContentStats(words, chars)
+    val words = if (normalized.isBlank()) { 0 } else {
+        normalized.split(Regex("\\s+")).size
+    }
+
+    return ContentStats(words = words, chars = chars)
+}
+
+private fun markdownToPlainText(markdown: String): String {
+    return markdown
+        .replace("\r\n", "\n")
+        .lines()
+        .joinToString("\n") { line ->
+            line
+                .replace(Regex("""^\s{0,3}>\s?"""), "")
+                .replace(Regex("""^\s*[-*+]\s+"""), "")
+                .replace(Regex("""^\s*\d+\.\s+"""), "")
+        }
+        .replace("**", "")
+        .replace("__", "")
+        .replace("~~", "")
+        .replace("==", "")
+        .replace("`", "")
+        .replace("*", "")
+        .replace("_", "")
 }

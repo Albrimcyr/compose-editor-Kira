@@ -19,7 +19,7 @@ class SaveChapterContentUseCaseTest {
         val repo = SpyChapterRepository(seed = listOf(chapter))
         val sut = SaveChapterContentUseCase(repo)
 
-        val result = sut(id = id, html = "Hello", currentChapters = listOf(chapter))
+        val result = sut(id = id, markdown = "Hello", currentChapters = listOf(chapter))
 
         Assertions.assertTrue(result.isSuccess)
         Assertions.assertEquals(chapter, result.getOrNull())

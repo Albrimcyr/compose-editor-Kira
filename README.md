@@ -16,7 +16,6 @@ The application is a chapter-based note editor supporting:
 - Delete chapter
 - Load chapter content
 - Edit and save content (with debouncing)
-- HTML content normalization
 - Persistent storage (JSON files, atomic writes)
 - Search chapter(s)
 

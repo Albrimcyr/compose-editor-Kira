@@ -137,6 +137,7 @@ fun App(viewModel: AppViewModel) {
                         title = uiState.selectedTitle,
                         content = uiState.selectedContent,
                         onContentChange = viewModel::onContentChange,
+                        onPlainTextChange = viewModel::onPlainTextChanged,
                         contentStats = uiState.contentStats,
                         onCloseChapter = viewModel::onCloseChapter,
                         colors = colors,
@@ -146,6 +147,10 @@ fun App(viewModel: AppViewModel) {
 
                         isToolbarVisible = uiState.isToolbarVisible,
                         onToggleToolbar = viewModel::onToggleToolbar,
+
+                        uiFontSize = uiState.editorFontSizeSp,
+                        onIncreaseEditorFont = viewModel::onIncreaseEditorFont,
+                        onDecreaseEditorFont = viewModel::onDecreaseEditorFont,
                     )
                 }
             }
