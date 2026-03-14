@@ -25,7 +25,7 @@ fun computeContentStatsFromPlainText(text: String): ContentStats {
     return ContentStats(words = words, chars = chars)
 }
 
-private fun markdownToPlainText(markdown: String): String {
+fun markdownToPlainText(markdown: String): String {
     return markdown
         .replace("\r\n", "\n")
         .lines()

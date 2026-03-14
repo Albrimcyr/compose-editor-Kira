@@ -470,7 +470,7 @@ class AppViewModel(
         statsJob?.cancel()
         statsJob = scope.launch {
             delay(statsDebounceMs)
-            val stats = computeContentStatsFromPlainText(plainText)
+            val stats = computeContentStatsFromPlainText(markdownToPlainText(plainText))
 
             _uiState.update { state ->
                 if (state.selectedId != selectedId) {

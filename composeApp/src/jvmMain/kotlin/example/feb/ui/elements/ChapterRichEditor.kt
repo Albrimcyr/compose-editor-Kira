@@ -79,12 +79,12 @@ fun ChapterRichEditor(
 
         val editorStyleConfig       = remember(zoom.zoomPercent) {
             HyphenStyleConfig(
-                h1Style = SpanStyle(fontSize = (fontSizeSp + 24).sp),
-                h2Style = SpanStyle(fontSize = (fontSizeSp + 18).sp),
-                h3Style = SpanStyle(fontSize = (fontSizeSp + 12).sp),
-                h4Style = SpanStyle(fontSize = (fontSizeSp + 6).sp),
-                h5Style = SpanStyle(fontSize = (fontSizeSp + 3).sp),
-                h6Style = SpanStyle(fontSize = (fontSizeSp + 1).sp),
+                h1Style = SpanStyle(fontSize = (fontSizeSp + 30).sp),
+                h2Style = SpanStyle(fontSize = (fontSizeSp + 25).sp),
+                h3Style = SpanStyle(fontSize = (fontSizeSp + 20).sp),
+                h4Style = SpanStyle(fontSize = (fontSizeSp + 15).sp),
+                h5Style = SpanStyle(fontSize = (fontSizeSp + 10).sp),
+                h6Style = SpanStyle(fontSize = (fontSizeSp + 5).sp),
             )
         }
 
