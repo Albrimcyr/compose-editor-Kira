@@ -4,22 +4,21 @@ import example.feb.domain.model.Chapter
 import example.feb.domain.repository.ChapterRepository
 import java.util.UUID
 
-class SaveChapterContentUseCase(
+class SetChapterZoomUseCase(
     private val repository: ChapterRepository,
 ) {
     suspend operator fun invoke(
         id: UUID,
-        markdown: String,
+        zoomPercent: Int,
         currentChapters: List<Chapter>,
     ): Result<Chapter> {
-
         val current = currentChapters.firstOrNull { it.id == id }
             ?: return Result.failure(NoSuchElementException("Chapter $id not found"))
 
-        // Small optimization: skip IO if nothing actually changed :)
-        if (current.content == markdown) return Result.success(current)
+        // Small optimization: skip IO if nothing actually changed
+        if (current.zoomPercent == zoomPercent) return Result.success(current)
 
-        val updated = current.copy(content = markdown)
+        val updated = current.copy(zoomPercent = zoomPercent)
         return runCatching { repository.upsert(updated) }
             .map { updated }
     }

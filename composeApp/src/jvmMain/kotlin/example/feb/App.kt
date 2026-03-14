@@ -30,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.input.key.onKeyEvent
+import example.feb.presentation.ZoomUiState
 
 import example.feb.ui.colorsFor
 import example.feb.ui.elements.MainContent
@@ -41,7 +42,6 @@ fun App(viewModel: AppViewModel) {
     MaterialTheme {
 
         val uiState by viewModel.uiState.collectAsState() // subscribed
-
         val colors = colorsFor(uiState.isDarkTheme)
 
         var showError by remember(uiState.errorMessage) { mutableStateOf(uiState.errorMessage != null) }
@@ -49,6 +49,14 @@ fun App(viewModel: AppViewModel) {
         var split by remember { mutableStateOf(0.40f) }
         val minSplit = 0.10f
         val maxSplit = 0.50f
+
+        val zoom = ZoomUiState(
+            zoomPercent = uiState.selectedZoomPercent,
+            isAtMin     = uiState.isZoomAtMin,
+            isAtMax     = uiState.isZoomAtMax,
+            onIncrease  = viewModel::onIncreaseZoom,
+            onDecrease  = viewModel::onDecreaseZoom,
+        )
 
         BoxWithConstraints{
             val totalWidthPx = constraints.maxWidth.toFloat().coerceAtLeast(1f)
@@ -147,10 +155,7 @@ fun App(viewModel: AppViewModel) {
 
                         isToolbarVisible = uiState.isToolbarVisible,
                         onToggleToolbar = viewModel::onToggleToolbar,
-
-                        uiFontSize = uiState.editorFontSizeSp,
-                        onIncreaseEditorFont = viewModel::onIncreaseEditorFont,
-                        onDecreaseEditorFont = viewModel::onDecreaseEditorFont,
+                        zoom = zoom,
                     )
                 }
             }

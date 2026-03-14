@@ -29,6 +29,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import example.feb.presentation.ContentStats
+import example.feb.presentation.ZoomUiState
 import example.feb.ui.AppColors
 import example.feb.ui.AppShapes
 import java.util.UUID
@@ -51,9 +52,7 @@ fun MainContent(
     isToolbarVisible: Boolean,
     onToggleToolbar: () -> Unit,
 
-    uiFontSize: Int,
-    onIncreaseEditorFont: () -> Unit,
-    onDecreaseEditorFont: () -> Unit,
+    zoom:  ZoomUiState,
 
 ) {
 
@@ -170,10 +169,7 @@ fun MainContent(
                         isToolbarVisible = isToolbarVisible,
                         colors = colors,
                         onToggleToolbar = onToggleToolbar,
-
-                        uiFontSize = uiFontSize,
-                        onIncreaseEditorFont = onIncreaseEditorFont,
-                        onDecreaseEditorFont = onDecreaseEditorFont,
+                        zoom = zoom,
                     )
                 }
 

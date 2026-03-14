@@ -14,9 +14,9 @@ import java.util.UUID
 /** MVVM + UDF-like ViewModel (hybrid)
 
    * -- one source of truth (single [AppUiState])
-   * -- sequential command processing!
-   * -- frequent content updates stay in-memory!
-   * -- testability: isolated UseCases!
+   * -- sequential command processing via Channel
+   * -- frequent content updates stay in-memory until debounce
+   * -- testability: isolated UseCases
    * -- something else... is planned?
 
 **/
@@ -28,6 +28,7 @@ class AppViewModel(
     private val renameChapter:      RenameChapterUseCase,
     private val deleteChapter:      DeleteChapterUseCase,
     private val saveChapterContent: SaveChapterContentUseCase,
+    private val setChapterZoom:     SetChapterZoomUseCase,
     dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
 
@@ -42,6 +43,8 @@ class AppViewModel(
 
     private val commands = Channel<Command>(capacity = Channel.BUFFERED)
 
+    private enum class ZoomDirection { In, Out }
+
     private sealed interface Command {
 
         // Serious commands
@@ -52,6 +55,7 @@ class AppViewModel(
         data object CloseChapter                                                : Command
         data class  RenameCommit    (val id: UUID, val title: String)           : Command
         data class  SaveDraft       (val id: UUID, val revision: Long)          : Command
+        data class  ZoomStep        (val direction: ZoomDirection)              : Command
 
     }
 
@@ -65,6 +69,7 @@ class AppViewModel(
                 is Command.RenameCommit         -> handleRenameCommit(cmd.id, cmd.title)
                 is Command.SaveDraft            -> handleSaveDraft(cmd.id, cmd.revision)
                 is Command.CloseChapter         -> handleCloseChapter()
+                is Command.ZoomStep             -> handleZoomStep(cmd.direction)
             }
         }
     }
@@ -82,16 +87,16 @@ class AppViewModel(
     fun onDeleteChapter(id: UUID)                   = dispatch(Command.DeleteChapter(id))
     fun onDel() { uiState.value.selectedId?.let {     dispatch(Command.DeleteChapter(it)) } }
     fun onCloseChapter()                            = dispatch(Command.CloseChapter)
+    fun onIncreaseZoom()                            = dispatch(Command.ZoomStep(ZoomDirection.In))
+    fun onDecreaseZoom()                            = dispatch(Command.ZoomStep(ZoomDirection.Out))
 
-    // Simple UI actions (reducer)
+    // Simple UI actions (synchronous reducers), no IO
     fun onStartRenaming(id: UUID)                   = reduceStartRenaming(id)
     fun onEsc()                                     = reduceCancelEditing()
     fun onToggleTheme()                             = reduceToggleTheme()
     fun onSearchQueryChanged(query: String)         = reduceSearchQueryChanged(query)
     fun onClearSearch()                             = reduceClearSearch()
     fun onToggleToolbar()                           = reduceToggleToolbar()
-    fun onIncreaseEditorFont()                      = reduceIncreaseEditorFont()
-    fun onDecreaseEditorFont()                      = reduceDecreaseEditorFont()
     fun onContentChange(id: UUID, markdown: String) = reduceEditorInput(id, markdown)
     fun onPlainTextChanged(text: String)            = scheduleDebouncedStatsUpdate(text)
 
@@ -116,9 +121,7 @@ class AppViewModel(
 
     // ── Direct Reducers ──────────────────────────────────────────────────────────────────────────────────────────────
 
-    private val minFont = 12
-    private val maxFont = 40
-    private val editorFontStep = 2
+    private val zoomSteps = listOf(100, 125, 150, 175, 200, 225, 250, 275, 300)
     private var draftRevision: Long = 0L // helper, local // might be moved
 
     private fun reduceStartRenaming(id: UUID) {
@@ -140,18 +143,6 @@ class AppViewModel(
 
     private fun reduceToggleToolbar() =
         _uiState.update { it.copy(isToolbarVisible = !it.isToolbarVisible) }
-
-    private fun reduceIncreaseEditorFont() {
-        _uiState.update { state -> state.copy (editorFontSizeSp = (state.editorFontSizeSp + editorFontStep)
-                    .coerceAtMost(maxFont))
-        }
-    }
-
-    private fun reduceDecreaseEditorFont() {
-        _uiState.update { state -> state.copy (editorFontSizeSp = (state.editorFontSizeSp - editorFontStep)
-                    .coerceAtLeast(minFont))
-        }
-    }
 
     private fun reduceEditorInput(id: UUID, markdown: String) {
         val state = _uiState.value
@@ -373,6 +364,30 @@ class AppViewModel(
                 contentStats    = ContentStats.Empty,
             )
         }
+    }
+
+    private suspend fun handleZoomStep(direction: ZoomDirection) {
+        val state = _uiState.value
+        val id    = state.selectedId ?: return
+        val next  = when (direction) {
+            ZoomDirection.In  -> zoomSteps.firstOrNull { it > state.selectedZoomPercent }
+            ZoomDirection.Out -> zoomSteps.lastOrNull  { it < state.selectedZoomPercent }
+        } ?: return
+        handleSetZoom(id, next)
+    }
+
+    private suspend fun handleSetZoom(id: UUID, zoomPercent: Int) {
+        persistDraftIfNeeded()
+
+        setChapterZoom(id, zoomPercent, _uiState.value.chapters)
+            .onSuccess { updated ->
+                _uiState.update { state ->
+                    state.copy(chapters = state.chapters.map { if (it.id == id) updated else it })
+                }
+            }
+            .onFailure { e ->
+                _uiState.update { it.copy(errorMessage = "Failed to save zoom: ${e.message}") }
+            }
     }
 
 

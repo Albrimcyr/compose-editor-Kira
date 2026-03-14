@@ -24,6 +24,7 @@ fun main() = application {
         renameChapter      = RenameChapterUseCase(repository),
         deleteChapter      = DeleteChapterUseCase(repository),
         saveChapterContent = SaveChapterContentUseCase(repository),
+        setChapterZoom     = SetChapterZoomUseCase(repository),
     )
 
     Window(

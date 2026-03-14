@@ -31,10 +31,10 @@ class FileChapterRepository(
 
     // ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-    private val mutex = Mutex() // LOCK
+    private val mutex       = Mutex() // LOCK
 
-    private val chaptersDir = rootDir.resolve("chapters") // CHAPTERS FOLDER
-    private val indexFile = rootDir.resolve("index.json") // INDEX FILE
+    private val chaptersDir = rootDir.resolve("chapters")   // CHAPTERS FOLDER
+    private val indexFile   = rootDir.resolve("index.json") // INDEX FILE
 
     // ─── LOAD ALL ────────────────────────────────────────────────────────────────────────────────────────────────────
     override suspend fun loadAll(): List<Chapter> = withContext(ioDispatcher) {
@@ -44,7 +44,6 @@ class FileChapterRepository(
 
             val index = readIndexOrNull()
             val orderedIds = index?.order.orEmpty()
-
             val loadedByIndex = orderedIds.mapNotNull { id -> readChapterOrNull(id) }
 
             // (OPTIONAL SELF HEALING - in case something breaks)
@@ -95,16 +94,25 @@ class FileChapterRepository(
     }
 
     // ──────── Convert to / from JSON ─────────────────────────────────────────────────────────────────────────────────
-    @Serializable private data class ChapterDto(val id: String, val title: String, val content: String)
-    @Serializable private data class IndexDto(val version: Int, val order: List<String>)
+    @Serializable
+    private data class ChapterDto(
+        val id:         String,
+        val title:      String,
+        val content:    String,
+        val zoom:       Int = 100
+    )
+    @Serializable
+    private data class IndexDto(
+        val version: Int,
+        val order: List<String>
+    )
 
     // ────── HELPERS INDEX ────────────────────────────────────────────────────────────────────────────────────────────
     private fun chapterFile(id: String): Path = chaptersDir.resolve("$id.json")
 
     private fun readIndexOrNull(): IndexDto? {
         if (!Files.exists(indexFile)) return null
-        val text = Files.readString(indexFile, StandardCharsets.UTF_8)
-        return json.decodeFromString(text)
+        return json.decodeFromString(Files.readString(indexFile, StandardCharsets.UTF_8))
     }
 
     private fun writeIndex(index: IndexDto) {
@@ -116,13 +124,12 @@ class FileChapterRepository(
     private fun readChapterOrNull(id: String): Chapter? {
         val file = chapterFile(id)
         if (!Files.exists(file)) return null
-        val text = Files.readString(file, StandardCharsets.UTF_8)
-        val dto = json.decodeFromString<ChapterDto>(text)
-        return Chapter(UUID.fromString(dto.id), dto.title, dto.content)
+        val dto = json.decodeFromString<ChapterDto>(Files.readString(file, StandardCharsets.UTF_8))
+        return Chapter(UUID.fromString(dto.id), dto.title, dto.content, dto.zoom)
     }
 
     private fun writeChapter(chapter: Chapter) {
-        val dto = ChapterDto(chapter.id.toString(), chapter.title, chapter.content)
+        val dto = ChapterDto(chapter.id.toString(), chapter.title, chapter.content, chapter.zoomPercent)
         val bytes = json.encodeToString(dto).toByteArray(StandardCharsets.UTF_8)
         AtomicFiles.writeAtomic(chapterFile(dto.id), bytes)
     }
