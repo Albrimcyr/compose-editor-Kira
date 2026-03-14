@@ -27,7 +27,7 @@ kotlin {
             implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
 
             // Markdown editor
-            implementation("io.github.densermeerkat:hyphen:0.1.0-alpha01")
+            implementation("io.github.densermeerkat:hyphen:0.2.0-alpha01")
 
         }
         commonTest.dependencies {

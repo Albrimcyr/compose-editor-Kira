@@ -1,4 +1,4 @@
-package example.feb.data
+package example.feb.data.memory
 
 import example.feb.domain.model.Chapter
 import example.feb.domain.repository.ChapterRepository

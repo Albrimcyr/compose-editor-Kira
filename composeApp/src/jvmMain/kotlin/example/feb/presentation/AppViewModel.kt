@@ -1,8 +1,5 @@
 package example.feb.presentation
 
-import example.feb.domain.text.ContentStats
-import example.feb.domain.text.computeContentStats
-import example.feb.domain.text.computeContentStatsFromPlainText
 import example.feb.domain.usecase.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow

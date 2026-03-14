@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -38,7 +39,9 @@ import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.denser.hyphen.model.MarkupStyle
@@ -71,6 +74,19 @@ fun ChapterRichEditor(
     key(chapterId) {
         val state = rememberHyphenTextState(initialText = storedMarkdown)
         val editorFocusRequester = remember { FocusRequester() }
+
+        val editorStyleConfig = remember(uiFontSize) {
+
+            HyphenStyleConfig(
+                h1Style = SpanStyle(fontSize = (uiFontSize + 24).sp,),
+                h2Style = SpanStyle(fontSize = (uiFontSize + 18).sp,),
+                h3Style = SpanStyle(fontSize = (uiFontSize + 12).sp,),
+                h4Style = SpanStyle(fontSize = (uiFontSize + 6).sp,),
+                h5Style = SpanStyle(fontSize = (uiFontSize + 3).sp,),
+                h6Style = SpanStyle(fontSize = (uiFontSize + 1).sp,),
+            )
+
+        }
 
         Column(modifier = modifier) {
 
@@ -107,7 +123,7 @@ fun ChapterRichEditor(
                         color = colors.blackColor,
                     ),
                     cursorBrush = SolidColor(colors.blackColor),
-                    styleConfig = HyphenStyleConfig(),
+                    styleConfig = editorStyleConfig,
                     onTextChange = onPlainTextChange,
                     onMarkdownChange = { markdown -> onMarkdownChange(chapterId, markdown) },
                 )
@@ -131,6 +147,9 @@ private fun EditorToolbar(
     onIncreaseEditorFont: () -> Unit,
     onDecreaseEditorFont: () -> Unit,
 ) {
+
+    val zoom = (uiFontSize * 100) / 16
+
     Row(
         modifier = modifier.heightIn(min = 32.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -152,9 +171,9 @@ private fun EditorToolbar(
                     onClick = onDecreaseEditorFont,
                 )
 
-                Box(modifier = Modifier.width(30.dp), contentAlignment = Alignment.Center) {
+                Box(modifier = Modifier.width(50.dp), contentAlignment = Alignment.Center) {
                     Text(
-                        text = uiFontSize.toString(),
+                        text = "$zoom%",
                         color = colors.blackColor
                     )
                 }
@@ -167,6 +186,14 @@ private fun EditorToolbar(
                 )
             }
         }
+
+        ToolbarTextToggleButton(
+            label = headingButtonLabel(state),
+            contentDescription = "cycle heading size",
+            isActive = currentHeading(state) != null,
+            colors = colors,
+            onClick = { cycleHeading(state, editorFocusRequester) },
+        )
 
         ToolbarToggleButton(
             icon = Icons.Outlined.FormatBold,
@@ -331,6 +358,83 @@ private fun ToolbarActionButton(
             )
         }
     }
+}
+
+@Composable
+private fun ToolbarTextToggleButton(
+    label: String,
+    contentDescription: String,
+    isActive: Boolean,
+    colors: AppColors,
+    onClick: () -> Unit,
+) {
+    Surface(
+        shape = AppShapes.rounded6,
+        color = if (isActive) colors.toggledColor else colors.sidebarColor,
+        modifier = Modifier
+            .width(30.dp)
+            .height(28.dp),
+    ) {
+        IconButton(
+            onClick = onClick,
+            modifier = Modifier.focusProperties { canFocus = false },
+        ) {
+            Text(
+                text = label,
+                color = colors.activeTextColor,
+                fontSize = 12.sp,
+            )
+        }
+    }
+}
+
+private fun currentHeading(state: HyphenTextState): MarkupStyle? =
+    when {
+        state.hasStyle(MarkupStyle.H1) -> MarkupStyle.H1
+        state.hasStyle(MarkupStyle.H2) -> MarkupStyle.H2
+        state.hasStyle(MarkupStyle.H3) -> MarkupStyle.H3
+        state.hasStyle(MarkupStyle.H4) -> MarkupStyle.H4
+        state.hasStyle(MarkupStyle.H5) -> MarkupStyle.H5
+        state.hasStyle(MarkupStyle.H6) -> MarkupStyle.H6
+    else -> null
+}
+
+private fun headingButtonLabel(state: HyphenTextState): String = when (currentHeading(state)) {
+    MarkupStyle.H1 -> "H1"
+    MarkupStyle.H2 -> "H2"
+    MarkupStyle.H3 -> "H3"
+    MarkupStyle.H4 -> "H4"
+    MarkupStyle.H5 -> "H5"
+    MarkupStyle.H6 -> "H6"
+    else -> "H"
+}
+
+private fun cycleHeading(
+    state: HyphenTextState,
+    editorFocusRequester: FocusRequester,
+) {
+    val current = currentHeading(state)
+
+    val next = when (current) {
+        null           -> MarkupStyle.H6
+        MarkupStyle.H6 -> MarkupStyle.H5
+        MarkupStyle.H5 -> MarkupStyle.H4
+        MarkupStyle.H4 -> MarkupStyle.H3
+        MarkupStyle.H3 -> MarkupStyle.H2
+        MarkupStyle.H2 -> MarkupStyle.H1
+        MarkupStyle.H1 -> null
+        else           -> null
+    }
+
+    if (current != null) {
+        state.toggleStyle(current)
+    }
+
+    if (next != null) {
+        state.toggleStyle(next)
+    }
+
+    editorFocusRequester.requestFocus()
 }
 
 private fun toggleStyle(

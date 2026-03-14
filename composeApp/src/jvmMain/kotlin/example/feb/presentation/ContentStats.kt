@@ -1,4 +1,4 @@
-package example.feb.domain.text
+package example.feb.presentation
 
 data class ContentStats(
     val words: Int,
@@ -31,6 +31,7 @@ private fun markdownToPlainText(markdown: String): String {
         .lines()
         .joinToString("\n") { line ->
             line
+                .replace(Regex("""^\s{0,3}#{1,6}\s+"""), "")
                 .replace(Regex("""^\s{0,3}>\s?"""), "")
                 .replace(Regex("""^\s*[-*+]\s+"""), "")
                 .replace(Regex("""^\s*\d+\.\s+"""), "")
@@ -41,5 +42,5 @@ private fun markdownToPlainText(markdown: String): String {
         .replace("==", "")
         .replace("`", "")
         .replace("*", "")
-        .replace("_", "")
+        .replace("-", "")
 }
