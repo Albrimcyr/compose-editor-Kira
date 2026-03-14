@@ -23,4 +23,8 @@ class InMemoryChapterRepository(
     override suspend fun delete(id: UUID) {
         storage.remove(id)
     }
+
+    override suspend fun findById(id: UUID): Chapter? =
+        storage[id]
+
 }

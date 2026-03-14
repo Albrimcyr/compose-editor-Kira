@@ -98,6 +98,14 @@ class FileChapterRepository(
         }
     }
 
+    // ─── FIND (HELPER) ───────────────────────────────────────────────────────────────────────────────────────────────
+
+    override suspend fun findById(id: UUID): Chapter? = withContext(ioDispatcher) {
+        mutex.withLock {
+            readChapterOrNull(id.toString())
+        }
+    }
+
     // ──────── Convert to / from JSON ─────────────────────────────────────────────────────────────────────────────────
     @Serializable
     private data class ChapterDto(

@@ -254,7 +254,7 @@ class AppViewModel(
     private suspend fun handleRenameCommit(id: UUID, rawTitle: String) {
         _uiState.update { it.copy(editingState = EditingState.None) }
 
-        when (val result = renameChapter(id, rawTitle, _uiState.value.chapters)) {
+        when (val result = renameChapter(id, rawTitle)) {
 
             is RenameResult.Success -> {
                 _uiState.update { state ->
@@ -377,7 +377,7 @@ class AppViewModel(
     private suspend fun handleSetZoom(id: UUID, zoomPercent: Int) {
         persistDraftIfNeeded()
 
-        setChapterZoom(id, zoomPercent, _uiState.value.chapters)
+        setChapterZoom(id, zoomPercent)
             .onSuccess { updated ->
                 _uiState.update { state ->
                     state.copy(chapters = state.chapters.map { if (it.id == id) updated else it })
@@ -413,7 +413,7 @@ class AppViewModel(
         markdownSnapshot: String,
         expectedRevision: Long?,
     ) {
-        saveChapterContent(id, markdownSnapshot, _uiState.value.chapters)
+        saveChapterContent(id, markdownSnapshot)
             .onSuccess { updated ->
                 _uiState.update { current ->
 

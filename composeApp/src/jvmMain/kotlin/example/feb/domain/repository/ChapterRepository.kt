@@ -7,4 +7,5 @@ interface ChapterRepository {
     suspend fun loadAll(): List<Chapter>
     suspend fun upsert(chapter: Chapter)
     suspend fun delete(id: UUID)
+    suspend fun findById(id: UUID): Chapter?
 }

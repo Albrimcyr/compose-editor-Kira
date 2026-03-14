@@ -18,13 +18,12 @@ class RenameChapterUseCase(
     suspend operator fun invoke(
         id: UUID,
         rawTitle: String,
-        currentChapters: List<Chapter>,
     ): RenameResult {
 
         val trimmed = rawTitle.trim()
         if (trimmed.isBlank()) return RenameResult.BlankTitle
 
-        val current = currentChapters.firstOrNull { it.id == id }
+        val current = repository.findById(id)
             ?: return RenameResult.ChapterNotFound
 
         // Small optimization :)

@@ -10,10 +10,9 @@ class SaveChapterContentUseCase(
     suspend operator fun invoke(
         id: UUID,
         markdown: String,
-        currentChapters: List<Chapter>,
     ): Result<Chapter> {
 
-        val current = currentChapters.firstOrNull { it.id == id }
+        val current = repository.findById(id)
             ?: return Result.failure(NoSuchElementException("Chapter $id not found"))
 
         // Small optimization: skip IO if nothing actually changed :)

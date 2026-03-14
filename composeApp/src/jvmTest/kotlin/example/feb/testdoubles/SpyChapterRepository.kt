@@ -8,11 +8,13 @@ class SpyChapterRepository(
     seed: List<Chapter> = emptyList(),
 ) : ChapterRepository {
 
-    var loadAllCalls = 0
+    var loadAllCalls    = 0
         private set
-    var upsertCalls = 0
+    var upsertCalls     = 0
         private set
-    var deleteCalls = 0
+    var deleteCalls     = 0
+        private set
+    var findByIdCalls   = 0
         private set
 
     var throwOnLoadAll: Throwable? = null
@@ -39,6 +41,11 @@ class SpyChapterRepository(
         deleteCalls++
         throwOnDelete?.let { throw it }
         storage.remove(id)
+    }
+
+    override suspend fun findById(id: UUID): Chapter? {
+        findByIdCalls++
+        return storage[id]
     }
 
     fun get(id: UUID): Chapter? = storage[id]
