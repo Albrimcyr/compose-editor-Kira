@@ -34,6 +34,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import example.feb.domain.model.Chapter
 import example.feb.ui.AppColors
 import example.feb.ui.AppShapes
 import java.util.UUID
@@ -63,7 +64,7 @@ fun ChapterItem(
     var localText by remember(isEditing, id) { mutableStateOf(title) }
 
     LaunchedEffect(isEditing, title, id) {
-        localText = if (isEditing && localText != "New chapter") title else ""
+        localText = if (isEditing && title != Chapter.DEFAULT_TITLE) title else ""
     }
 
     LaunchedEffect(isEditing, id) {

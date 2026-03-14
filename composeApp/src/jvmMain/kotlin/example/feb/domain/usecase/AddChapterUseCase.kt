@@ -10,7 +10,7 @@ class AddChapterUseCase(
     suspend operator fun invoke(): Result<Chapter> {
         val chapter = Chapter(
             id      = UUID.randomUUID(),
-            title   = "New chapter",
+            title   = Chapter.DEFAULT_TITLE,
             content = "",
         )
         return runCatching { repository.upsert(chapter) }

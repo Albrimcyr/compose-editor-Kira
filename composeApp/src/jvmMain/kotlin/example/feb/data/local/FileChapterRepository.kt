@@ -36,6 +36,8 @@ class FileChapterRepository(
     private val chaptersDir = rootDir.resolve("chapters")   // CHAPTERS FOLDER
     private val indexFile   = rootDir.resolve("index.json") // INDEX FILE
 
+    private var cachedOrder: MutableList<String>? = null
+
     // ─── LOAD ALL ────────────────────────────────────────────────────────────────────────────────────────────────────
     override suspend fun loadAll(): List<Chapter> = withContext(ioDispatcher) {
 
@@ -44,6 +46,7 @@ class FileChapterRepository(
 
             val index = readIndexOrNull()
             val orderedIds = index?.order.orEmpty()
+            cachedOrder = orderedIds.toMutableList()
             val loadedByIndex = orderedIds.mapNotNull { id -> readChapterOrNull(id) }
 
             // (OPTIONAL SELF HEALING - in case something breaks)
@@ -66,14 +69,16 @@ class FileChapterRepository(
     override suspend fun upsert(chapter: Chapter) = withContext(ioDispatcher) {
         mutex.withLock {
             Files.createDirectories(chaptersDir)
-
             writeChapter(chapter)
 
             val id = chapter.id.toString()
-            val index = readIndexOrNull() ?: IndexDto(version = 1, order = emptyList())
+            val order = cachedOrder // no disk usage
 
-            if (id !in index.order) {
-                writeIndex(index.copy(order = index.order + id))
+            if (order == null || id !in order) {
+                val index = readIndexOrNull() ?: IndexDto(version = 1, order = emptyList())
+                val newOrder = (index.order + id).toMutableList()
+                writeIndex(index.copy(order = newOrder))
+                cachedOrder = newOrder
             }
         }
     }
@@ -86,9 +91,9 @@ class FileChapterRepository(
 
             Files.deleteIfExists(chapterFile(idStr))
             val index = readIndexOrNull() ?: return@withLock
-            if (idStr in index.order) {
-                writeIndex(index.copy(order = index.order.filterNot { it == idStr }))
-            }
+            val newOrder = index.order.filterNot { it == idStr }.toMutableList()
+            writeIndex(index.copy(order = newOrder))
+            cachedOrder = newOrder
 
         }
     }

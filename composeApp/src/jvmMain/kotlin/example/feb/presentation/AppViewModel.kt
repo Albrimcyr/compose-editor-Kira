@@ -108,15 +108,13 @@ class AppViewModel(
     }
 
     fun dispose() {
+        cancelPendingSave()
+        cancelPendingStats()
 
-        runBlocking {
-            cancelPendingSave()
-            cancelPendingStats()
-            persistDraftIfNeeded()
+        scope.launch { persistDraftIfNeeded() }.invokeOnCompletion {
+            commands.close()
+            scope.cancel()
         }
-
-        commands.close()
-        scope.cancel()
     }
 
     // ── Direct Reducers ──────────────────────────────────────────────────────────────────────────────────────────────

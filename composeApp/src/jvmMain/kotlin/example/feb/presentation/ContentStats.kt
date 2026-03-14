@@ -32,15 +32,13 @@ fun markdownToPlainText(markdown: String): String {
         .joinToString("\n") { line ->
             line
                 .replace(Regex("""^\s{0,3}#{1,6}\s+"""), "")
-                .replace(Regex("""^\s{0,3}>\s?"""), "")
-                .replace(Regex("""^\s*[-*+]\s+"""), "")
-                .replace(Regex("""^\s*\d+\.\s+"""), "")
+                .replace(Regex("""^\s{0,3}>\s?"""),      "")
+                .replace(Regex("""^\s*[-*+]\s+"""),      "")
+                .replace(Regex("""^\s*\d+\.\s+"""),      "")
         }
         .replace("**", "")
         .replace("__", "")
         .replace("~~", "")
         .replace("==", "")
         .replace("`", "")
-        .replace("*", "")
-        .replace("-", "")
 }

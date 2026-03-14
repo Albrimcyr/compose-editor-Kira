@@ -7,4 +7,8 @@ data class Chapter(
     val title: String,
     val content: String,
     val zoomPercent: Int = 100,
-)
+) {
+    companion object {
+        const val DEFAULT_TITLE = "New Chapter"
+    }
+}
