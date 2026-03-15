@@ -17,10 +17,11 @@ class RenameChapterUseCaseTest {
         val repo = SpyChapterRepository(seed = listOf(chapter))
         val sut = RenameChapterUseCase(repo)
 
-        val result = sut(id = id, rawTitle = "  testTitle  ", currentChapters = listOf(chapter))
+        val result = sut(id = id, rawTitle = "  testTitle  ")
 
         Assertions.assertTrue(result is RenameResult.Success)
         Assertions.assertEquals(chapter, (result as RenameResult.Success).updated)
+        Assertions.assertEquals(1, repo.findByIdCalls)
         Assertions.assertEquals(0, repo.upsertCalls)
     }
 

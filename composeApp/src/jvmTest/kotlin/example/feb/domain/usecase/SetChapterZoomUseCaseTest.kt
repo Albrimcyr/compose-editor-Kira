@@ -18,10 +18,11 @@ class SetChapterZoomUseCaseTest {
         val repo    = SpyChapterRepository(seed = listOf(chapter))
         val sut     = SetChapterZoomUseCase(repo)
 
-        val result  = sut(id = id, zoomPercent = 150, currentChapters = listOf(chapter))
+        val result  = sut(id = id, zoomPercent = 150)
 
         Assertions.assertTrue(result.isSuccess)
         Assertions.assertEquals(chapter, result.getOrNull())
+        Assertions.assertEquals(1, repo.findByIdCalls)
         Assertions.assertEquals(0, repo.upsertCalls) // no IO
     }
 
@@ -31,10 +32,11 @@ class SetChapterZoomUseCaseTest {
         val repo    = SpyChapterRepository()
         val sut     = SetChapterZoomUseCase(repo)
 
-        val result  = sut(id = id, zoomPercent = 150, currentChapters = emptyList())
+        val result  = sut(id = id, zoomPercent = 150)
 
         Assertions.assertTrue(result.isFailure)
-        Assertions.assertEquals(0, repo.upsertCalls)
+        Assertions.assertEquals(1, repo.findByIdCalls)
+        Assertions.assertEquals(0, repo.upsertCalls) // no IO
     }
 
     // ── REPO EXCEPTION ───────────────────────────────────────────────────────────────────────────────────────────────
@@ -46,10 +48,12 @@ class SetChapterZoomUseCaseTest {
         }
         val sut = SetChapterZoomUseCase(repo)
 
-        val result = sut(id = id, zoomPercent = 200, currentChapters = listOf(chapter))
+        val result = sut(id = id, zoomPercent = 200)
 
         Assertions.assertTrue(result.isFailure)
         Assertions.assertEquals("Disk full!!!", result.exceptionOrNull()?.message)
+        Assertions.assertEquals(1, repo.findByIdCalls)
+        Assertions.assertEquals(1, repo.upsertCalls) // no IO
     }
 
 }
