@@ -149,13 +149,7 @@ class AppViewModel(
         draftRevision += 1
         val revision = draftRevision
 
-        _uiState.update {
-            it.copy(
-                draftChapterId = id,
-                draftMarkdown = markdown,
-                isDraftDirty = true,
-            )
-        }
+        _uiState.update { it.copy(draft = DraftState.Dirty(chapterId = id, markdown = markdown)) }
 
         scheduleDebouncedSave(id, revision)
     }
@@ -184,9 +178,7 @@ class AppViewModel(
                             selectedId     = selectedChapter?.id,
                             editingState   = EditingState.None,
                             errorMessage   = null,
-                            draftChapterId = null,
-                            draftMarkdown  = "",
-                            isDraftDirty   = false,
+                            draft          = DraftState.Clean,
                             contentStats   = computeContentStats(selectedChapter?.content.orEmpty())
                         )
                     }
@@ -215,9 +207,7 @@ class AppViewModel(
                         selectedId     = chapter.id,
                         editingState   = EditingState.None,
                         errorMessage   = null,
-                        draftChapterId = null,
-                        draftMarkdown  = "",
-                        isDraftDirty   = false,
+                        draft          = DraftState.Clean,
                         contentStats   = ContentStats.Empty,
                     )
                 }
@@ -241,9 +231,7 @@ class AppViewModel(
             it.copy(
                 selectedId     = id,
                 editingState   = EditingState.None,
-                draftChapterId = null,
-                draftMarkdown  = "",
-                isDraftDirty   = false,
+                draft          = DraftState.Clean,
                 errorMessage   = null,
                 contentStats   = computeContentStats(chapter.content),
             )
@@ -316,9 +304,7 @@ class AppViewModel(
                 chapters       = newChapters,
                 selectedId     = newSelectedId,
                 editingState   = newEditingState,
-                draftChapterId = if (isDeletingSelected) null  else it.draftChapterId,
-                draftMarkdown  = if (isDeletingSelected) ""    else it.draftMarkdown,
-                isDraftDirty   = if (isDeletingSelected) false else it.isDraftDirty,
+                draft          = if (isDeletingSelected) DraftState.Clean else it.draft,
                 contentStats   = if (isDeletingSelected) {
                     computeContentStats(newSelectedChapter?.content.orEmpty())
                 } else { it.contentStats },
@@ -334,14 +320,14 @@ class AppViewModel(
 
     private suspend fun handleSaveDraft(id: UUID, revision: Long) {
         val state = _uiState.value
-        if (state.draftChapterId != id || !state.isDraftDirty) return
-        if (draftRevision != revision) return // death on obsolete
 
-        val markdownSnapshot = state.draftMarkdown // local copy (suspend)
+        val draft = state.draft as? DraftState.Dirty ?: return  // first check
+        if (draft.chapterId != id) return                       // second check
+        if (draftRevision != revision) return                   // third check
 
         persistDraftSnapshot(
             id = id,
-            markdownSnapshot = markdownSnapshot,
+            markdownSnapshot = draft.markdown,
             expectedRevision = revision,
         )
     }
@@ -355,9 +341,7 @@ class AppViewModel(
             it.copy(
                 selectedId      = null,
                 editingState    = EditingState.None,
-                draftChapterId  = null,
-                draftMarkdown   = "",
-                isDraftDirty    = false,
+                draft           = DraftState.Clean,
                 errorMessage    = null,
                 contentStats    = ContentStats.Empty,
             )
@@ -392,17 +376,14 @@ class AppViewModel(
     // ── DRAFT HELPERS ────────────────────────────────────────────────────────────────────────────────────────────────
 
     private suspend fun persistDraftIfNeeded() {
-        val state = _uiState.value
-        val id = state.draftChapterId ?: return
-        if (!state.isDraftDirty) return
+
+        val draft = _uiState.value.draft as? DraftState.Dirty ?: return
 
         cancelPendingSave()
 
-        val markdownSnapshot = state.draftMarkdown
-
         persistDraftSnapshot(
-            id = id,
-            markdownSnapshot = markdownSnapshot,
+            id = draft.chapterId,
+            markdownSnapshot = draft.markdown,
             expectedRevision = null,
         )
 
@@ -421,17 +402,17 @@ class AppViewModel(
                         if (chapter.id == id) updated else chapter
                     }
 
+                    val currentDraft = current.draft
                     val sameSnapshotStillCurrent =
-                        current.draftChapterId == id &&
-                                current.draftMarkdown == markdownSnapshot &&
+                        currentDraft is DraftState.Dirty &&
+                                currentDraft.chapterId  == id &&
+                                currentDraft.markdown   == markdownSnapshot &&
                                 (expectedRevision == null || draftRevision == expectedRevision)
 
                     if (sameSnapshotStillCurrent) {
                         current.copy(
                             chapters        = updatedChapters,
-                            draftChapterId  = null,
-                            draftMarkdown   = "",
-                            isDraftDirty    = false,
+                            draft           = DraftState.Clean,
                             errorMessage    = null,
                         )
                     } else {

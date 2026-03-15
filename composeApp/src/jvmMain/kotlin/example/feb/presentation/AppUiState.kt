@@ -18,7 +18,12 @@ sealed interface EditingState {
     data class  Renaming(val id: UUID)  : EditingState
 }
 
-data class ZoomUiState(
+sealed interface DraftState {
+    data object Clean : DraftState
+    data class  Dirty(val chapterId: UUID, val markdown: String) : DraftState
+}
+
+class ZoomUiState(
     val zoomPercent: Int,
     val isAtMin: Boolean,
     val isAtMax: Boolean,
@@ -35,10 +40,11 @@ data class ZoomUiState(
 data class AppUiState(
 
     // MAIN
-    val isLoading: Boolean = true,
-    val chapters: List<Chapter> = emptyList(),
-    val selectedId: UUID? = null,
-    val editingState: EditingState = EditingState.None,
+    val isLoading    : Boolean       = true,
+    val chapters     : List<Chapter> = emptyList(),
+    val selectedId   : UUID?         = null,
+    val editingState : EditingState  = EditingState.None,
+    val draft        : DraftState    = DraftState.Clean,
 
     // ERROR
     val errorMessage: String? = null,
@@ -49,11 +55,6 @@ data class AppUiState(
     // UI FLAGS
     val isDarkTheme: Boolean = true,
     val isToolbarVisible: Boolean = true,
-
-    // DRAFT
-    val draftChapterId: UUID? = null,
-    val draftMarkdown: String = "",
-    val isDraftDirty: Boolean = false,
 
     // STATS
     val contentStats: ContentStats = ContentStats.Empty,
@@ -84,7 +85,11 @@ data class AppUiState(
     val selectedContent: String
         get() {
             val id = selectedId ?: return ""
-            return if (draftChapterId == id) draftMarkdown else selected?.content.orEmpty()
+            val draft = draft
+            return if (draft is DraftState.Dirty && draft.chapterId == id)
+                draft.markdown
+            else
+                selected?.content.orEmpty()
         }
 
     val chapterRows: List<ChapterRowUi>
