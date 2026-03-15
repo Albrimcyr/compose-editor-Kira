@@ -27,6 +27,7 @@ import androidx.compose.material.icons.outlined.TextIncrease
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,6 +42,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.denser.hyphen.model.MarkupStyle
@@ -68,7 +70,9 @@ fun ChapterRichEditor(
     isToolbarVisible: Boolean,
     onToggleToolbar: () -> Unit,
 
-    zoom:  ZoomUiState
+    zoom:  ZoomUiState,
+    onZoomIn: () -> Unit,
+    onZoomOut: () -> Unit,
 ) {
 
     key(chapterId) {
@@ -99,6 +103,8 @@ fun ChapterRichEditor(
                         editorFocusRequester    = editorFocusRequester,
                         onToggleToolbar         = onToggleToolbar,
                         zoom                    = zoom,
+                        onZoomIn                = onZoomIn,
+                        onZoomOut               = onZoomOut,
                     )
                 }
             }
@@ -134,6 +140,8 @@ private fun EditorToolbar(
     editorFocusRequester: FocusRequester,
     onToggleToolbar: () -> Unit,
     zoom: ZoomUiState,
+    onZoomIn: () -> Unit,
+    onZoomOut: () -> Unit,
 ) {
 
     Row(
@@ -156,7 +164,7 @@ private fun EditorToolbar(
                     contentDescription  = "decrease editor zoom",
                     colors              = colors,
                     enabled             = !zoom.isAtMin,
-                    onClick             = zoom.onDecrease,
+                    onClick             = onZoomOut,
                 )
 
                 Box(modifier = Modifier.width(45.dp), contentAlignment = Alignment.Center) {
@@ -168,7 +176,7 @@ private fun EditorToolbar(
                     contentDescription  = "increase editor zoom",
                     colors              = colors,
                     enabled             = !zoom.isAtMax,
-                    onClick             = zoom.onIncrease,
+                    onClick             = onZoomIn,
                 )
             }
         }
@@ -372,7 +380,8 @@ private fun ToolbarTextToggleButton(
             Text(
                 text        = label,
                 color       = colors.activeTextColor,
-                fontSize    = 12.sp)
+                fontSize    = 12.sp,
+                fontWeight  = FontWeight.Bold)
         }
     }
 }

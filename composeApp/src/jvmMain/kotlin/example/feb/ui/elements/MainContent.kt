@@ -53,6 +53,8 @@ fun MainContent(
     onToggleToolbar: () -> Unit,
 
     zoom:  ZoomUiState,
+    onZoomIn: () -> Unit,
+    onZoomOut: () -> Unit,
 
 ) {
 
@@ -155,7 +157,7 @@ fun MainContent(
                 }
 
 
-                // ── EDITOR AREA ──────────────────────────────────────────────────────────────────────────────────────────
+                // ── EDITOR AREA ──────────────────────────────────────────────────────────────────────────────────────
 
                 Surface(
                     modifier = Modifier.weight(1f, fill = true).fillMaxWidth(),
@@ -170,10 +172,12 @@ fun MainContent(
                         colors = colors,
                         onToggleToolbar = onToggleToolbar,
                         zoom = zoom,
+                        onZoomIn  = onZoomIn,
+                        onZoomOut = onZoomOut,
                     )
                 }
 
-                // ── STATS AREA ───────────────────────────────────────────────────────────────────────────────────────────
+                // ── STATS AREA ───────────────────────────────────────────────────────────────────────────────────────
 
                 Surface(modifier = Modifier
                             .fillMaxWidth(),

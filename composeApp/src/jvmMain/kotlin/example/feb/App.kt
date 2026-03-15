@@ -54,8 +54,6 @@ fun App(viewModel: AppViewModel) {
             zoomPercent = uiState.selectedZoomPercent,
             isAtMin     = uiState.isZoomAtMin,
             isAtMax     = uiState.isZoomAtMax,
-            onIncrease  = viewModel::onIncreaseZoom,
-            onDecrease  = viewModel::onDecreaseZoom,
         )
 
         BoxWithConstraints{
@@ -155,7 +153,10 @@ fun App(viewModel: AppViewModel) {
 
                         isToolbarVisible = uiState.isToolbarVisible,
                         onToggleToolbar = viewModel::onToggleToolbar,
+
                         zoom = zoom,
+                        onZoomIn  = viewModel::onIncreaseZoom,
+                        onZoomOut = viewModel::onDecreaseZoom,
                     )
                 }
             }

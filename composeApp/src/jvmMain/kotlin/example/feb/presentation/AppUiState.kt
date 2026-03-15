@@ -23,14 +23,11 @@ sealed interface DraftState {
     data class  Dirty(val chapterId: UUID, val markdown: String) : DraftState
 }
 
-class ZoomUiState(
-    val zoomPercent: Int,
-    val isAtMin: Boolean,
-    val isAtMax: Boolean,
-    val onIncrease: () -> Unit,
-    val onDecrease: () -> Unit,
+data class ZoomUiState(
+    val zoomPercent:    Int,
+    val isAtMin:        Boolean,
+    val isAtMax:        Boolean,
 )
-
 
 // ─── SINGLE SOURCE OF TRUTH ──────────────────────────────────────────────────────────────────────────────────────────
 //  Stores only state.
