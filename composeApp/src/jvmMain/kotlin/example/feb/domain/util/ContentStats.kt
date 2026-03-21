@@ -1,4 +1,4 @@
-package example.feb.presentation
+package example.feb.domain.util
 
 data class ContentStats(
     val words: Int,

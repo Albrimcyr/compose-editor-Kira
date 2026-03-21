@@ -1,6 +1,7 @@
 package example.feb.presentation
 
 import example.feb.domain.model.Chapter
+import example.feb.domain.util.ContentStats
 import java.util.UUID
 
 
@@ -19,8 +20,8 @@ sealed interface EditingState {
 }
 
 sealed interface DraftState {
-    data object Clean : DraftState
-    data class  Dirty(val chapterId: UUID, val markdown: String) : DraftState
+    data object Clean                                               : DraftState
+    data class  Dirty(val chapterId: UUID, val markdown: String)    : DraftState
 }
 
 data class ZoomUiState(
@@ -36,25 +37,16 @@ data class ZoomUiState(
 
 data class AppUiState(
 
-    // MAIN
-    val isLoading    : Boolean       = true,
-    val chapters     : List<Chapter> = emptyList(),
-    val selectedId   : UUID?         = null,
-    val editingState : EditingState  = EditingState.None,
-    val draft        : DraftState    = DraftState.Clean,
-
-    // ERROR
-    val errorMessage: String? = null,
-
-    // SEARCH
-    val searchQuery: String = "",
-
-    // UI FLAGS
-    val isDarkTheme: Boolean = true,
-    val isToolbarVisible: Boolean = true,
-
-    // STATS
-    val contentStats: ContentStats = ContentStats.Empty,
+    val isLoading           : Boolean           = true,
+    val chapters            : List<Chapter>     = emptyList(),
+    val selectedId          : UUID?             = null,
+    val editingState        : EditingState      = EditingState.None,
+    val draft               : DraftState        = DraftState.Clean,
+    val errorMessage        : String?           = null,
+    val searchQuery         : String            = "",
+    val isDarkTheme         : Boolean           = true,
+    val isToolbarVisible    : Boolean           = true,
+    val contentStats        : ContentStats = ContentStats.Empty,
 
     ){
 

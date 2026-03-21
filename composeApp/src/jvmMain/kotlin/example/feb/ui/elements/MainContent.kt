@@ -28,7 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import example.feb.presentation.ContentStats
+import example.feb.domain.util.ContentStats
 import example.feb.presentation.ZoomUiState
 import example.feb.ui.AppColors
 import example.feb.ui.AppShapes

@@ -1,6 +1,10 @@
 package example.feb.presentation
 
 import example.feb.domain.usecase.*
+import example.feb.domain.util.ContentStats
+import example.feb.domain.util.computeContentStats
+import example.feb.domain.util.computeContentStatsFromPlainText
+import example.feb.domain.util.markdownToPlainText
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -162,7 +166,6 @@ class AppViewModel(
         cancelPendingStats()
 
         _uiState.update { it.copy(isLoading = true, errorMessage = null, editingState = EditingState.None) }
-
         loadChapters()
 
                 .onSuccess { loaded ->
@@ -314,7 +317,7 @@ class AppViewModel(
         deleteChapter(id)
             .onFailure { e ->
                 _uiState.update { it.copy(errorMessage = "Delete failed..?: ${e.message}") }
-                dispatch(Command.Load)
+                handleLoad()
             }
     }
 
